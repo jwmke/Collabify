@@ -1,33 +1,44 @@
 "use client";
 import { useEffect, useState } from 'react';
 import Following from '../../components/Following';
+import { Grid } from 'react-loading-icons';
 
-const FOLLOWER_ENDPOINT = 'https://api.spotify.com/v1/me/following?type=artist&limit=50'
-  
 export default function Home() {
-    const [data, setData] = useState(null)
-    const [isLoading, setLoading] = useState(false)
+    const [artists, setArtists] = useState([])
+    const [isLoading, setLoading] = useState(true)
+    const [url, setUrl] = useState("https://api.spotify.com/v1/me/following?type=artist&limit=50");
 
-    useEffect(()=> {
-        setLoading(true)
-        fetch(FOLLOWER_ENDPOINT, {
+    const fetchArtists = () => {
+        fetch(url, {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
                 'Authorization': `${localStorage.getItem("tokenType")} ${localStorage.getItem("accessToken")}`
             },
         })
-          .then((res) => res.json())
-          .then((data) => {
-            setData(data)
-            setLoading(false)
-          })
-    }, [])
+            .then((res) => res.json())
+            .then((data) => {
+                setArtists([...artists, ...data.artists.items] as any);
+                if (data.artists.next === null) {
+                    setLoading(false);
+                } else {
+                    setUrl(data.artists.next);
+                }
+            }
+        )
+    }
 
-    if (isLoading) return <p>Loading...</p>
-    if (!data) return <p>Loading...</p>
+    useEffect(()=> {
+        fetchArtists();
+    }, []);
+
+    useEffect(()=> {
+        fetchArtists();
+    }, [url]);
+
+    if (isLoading || !artists) return <Grid fill="#1DB954"/>;
 
     return <div>
-        <Following following={data}/>
+        <Following following={artists}/>
     </div>;
 }

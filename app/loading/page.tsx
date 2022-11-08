@@ -1,6 +1,7 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from "next/navigation";
+import { Grid } from 'react-loading-icons';
 
 const getReturnedParamsFromSpotifyAuth = (hash: string) => {
     const stringAfterHashtag = hash.substring(1);
@@ -16,8 +17,6 @@ const getReturnedParamsFromSpotifyAuth = (hash: string) => {
 
 export default function Page() {
     const router = useRouter();
-    // const [token, setToken] = useState("");
-    // const [type, setType] = useState("");
 
     useEffect(()=>{
         let hash:string = window && window.location.hash;
@@ -31,5 +30,5 @@ export default function Page() {
         }
     }, []);
 
-    return <p>Loading...</p>;
+    return <Grid fill="#1DB954"/>;
 }
