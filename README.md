@@ -1,4 +1,4 @@
-# Collabify Front End Repository
+# Collabify Repository
 
 👷🚧work in progress🚧👷
 
