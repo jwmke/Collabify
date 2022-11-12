@@ -4,14 +4,16 @@ import Following from '../../components/Following';
 import Collabs from '../../components/Collabs';
 import { Grid } from 'react-loading-icons';
 
+const ORIGINAL_URL = "https://api.spotify.com/v1/me/following?type=artist&limit=50";
+
 export default function Home() {
     const [artists, setArtists] = useState([] as SpotifyApi.ArtistObjectFull[])
     const [isLoading, setLoading] = useState(true)
-    const [url, setUrl] = useState("https://api.spotify.com/v1/me/following?type=artist&limit=50");
+    const [url, setUrl] = useState(ORIGINAL_URL);
     // const [collabs, setCollabs] = useState([] as SpotifyApi.TrackObjectFull[]);
     const [collabs, setCollabs] = useState([] as string[]); // todo: remove later
     const [artistIds, setArtistIds] = useState([] as string[]);
-
+    
     const fetchArtists = () => {
         fetch(url, {
             headers: {
@@ -22,13 +24,8 @@ export default function Home() {
         })
             .then((res) => res.json())
             .then((data) => {
-                setArtists([...artists, ...data.artists.items]);
+                setArtists(artists => [...artists, ...data.artists.items]);
                 if (data.artists.next === null) {
-                    setArtistIds(
-                        artists.map(artist => {
-                            return artist.id;
-                        })
-                    )
                     setLoading(false);
                 } else {
                     setUrl(data.artists.next);
@@ -57,8 +54,18 @@ export default function Home() {
     }, []);
 
     useEffect(()=> {
-        fetchArtists();
+        if (url !== ORIGINAL_URL) {
+            fetchArtists();
+        };
     }, [url]);
+
+    useEffect(()=> {
+        setArtistIds(
+            artists.map(artist => {
+                return artist.id;
+            })
+        )
+    }, [artists]);
 
     if (isLoading || !artists) return <Grid fill="#1DB954"/>;
 
