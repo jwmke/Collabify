@@ -6,7 +6,7 @@ import { Grid } from 'react-loading-icons';
 const getReturnedParamsFromSpotifyAuth = (hash: string) => {
     const stringAfterHashtag = hash.substring(1);
     const paramsInUrl = stringAfterHashtag.split("&");
-    const paramsSplitUp = paramsInUrl.reduce((accumulater:any, currentValue) => {
+    const paramsSplitUp = paramsInUrl.reduce((accumulater: Record<string, string>, currentValue) => {
       const [key, value] = currentValue.split("=");
       accumulater[key] = value;
       return accumulater;

@@ -9,14 +9,16 @@ const SCOPES = [ "user-follow-read", "playlist-modify-private" ];
 const SCOPES_URL_PARAM = SCOPES.join("%20");
 
 export default function Page() {
-    const [win, setWindow]:any = useState(null);
+    const [win, setWindow] = useState(null as Window|null);
 
     useEffect(()=>{
         setWindow(window);
     },[]);
 
     const handleLogin = () => {
-        win.location = `${SPOTIFY_AUTHORIZE_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URL_AFTER_LOGIN}&scope=${SCOPES_URL_PARAM}&response_type=token&show_dialog=true`;
+        if (win) {
+            win.location = `${SPOTIFY_AUTHORIZE_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URL_AFTER_LOGIN}&scope=${SCOPES_URL_PARAM}&response_type=token&show_dialog=true`;
+        }
     };
 
     return <div>

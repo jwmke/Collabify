@@ -4,7 +4,7 @@ import Following from '../../components/Following';
 import { Grid } from 'react-loading-icons';
 
 export default function Home() {
-    const [artists, setArtists] = useState([])
+    const [artists, setArtists] = useState([] as SpotifyApi.ArtistObjectFull[])
     const [isLoading, setLoading] = useState(true)
     const [url, setUrl] = useState("https://api.spotify.com/v1/me/following?type=artist&limit=50");
 
@@ -18,7 +18,7 @@ export default function Home() {
         })
             .then((res) => res.json())
             .then((data) => {
-                setArtists([...artists, ...data.artists.items] as any);
+                setArtists([...artists, ...data.artists.items]);
                 if (data.artists.next === null) {
                     setLoading(false);
                 } else {
