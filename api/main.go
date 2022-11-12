@@ -3,7 +3,9 @@ package main
 import (
 	"io/ioutil"
 	"net/http"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,6 +42,16 @@ func getCollabs(c *gin.Context) {
 
 func main() {
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://127.0.0.1"},
+		AllowMethods:     []string{"POST", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowAllOrigins:  false,
+		AllowOriginFunc:  func(origin string) bool { return true },
+		MaxAge:           12 * time.Hour,
+	}))
 	r.POST("/collabs", getCollabs)
 	r.Run()
 }
