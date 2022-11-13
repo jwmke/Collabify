@@ -41,7 +41,12 @@ export default function Home() {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(artistIds)
+            body: JSON.stringify(
+                {
+                    "token": localStorage.getItem("accessToken"),
+                    "artists": artistIds
+                }
+            )
         })
         .then((res) => res.json())
         .then((data) => {

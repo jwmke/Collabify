@@ -10,16 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Artist struct {
-	Name         string            `json:"name"`
-	ID           ID                `json:"id"`
-	URI          URI               `json:"uri"`
-	Endpoint     string            `json:"href"`
-	ExternalURLs map[string]string `json:"external_urls"`
-	Popularity   int               `json:"popularity"`
-	Genres       []string          `json:"genres"`
-	Followers    Followers         `json:"followers"`
-	Images       []Image           `json:"images"`
+type collabReq struct {
+	Token   string `json:"token"`
+	Artists []ID   `json:"artists"`
 }
 
 //TODO
@@ -30,27 +23,25 @@ type Artist struct {
 // [❌] 5. concatinate return lists from all goroutines into single list, ensuring to remove duplicates
 // [❌] 6. return single list to frontend
 
-func getCollabs(c *gin.Context) {
-	var artistIds []ID
+func sendGetCollabs(c *gin.Context) {
+	var request collabReq
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.AbortWithError(400, err)
 		return
 	}
 
-	err = json.Unmarshal(body, &artistIds)
+	err = json.Unmarshal(body, &request)
 	if err != nil {
 		c.AbortWithError(400, err)
 		return
 	}
 
-	artistIdMap := make(map[ID]bool)
-	for _, id := range artistIds {
-		artistIdMap[id] = true
-	}
+	trackIds := getCollabs(request)
+	jsonTrackIds, _ := json.Marshal(trackIds)
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": string(artistIds[1]),
+		"trackIds": jsonTrackIds,
 	})
 }
 
@@ -66,6 +57,6 @@ func main() {
 		AllowOriginFunc:  func(origin string) bool { return true },
 		MaxAge:           12 * time.Hour,
 	}))
-	r.POST("/collabs", getCollabs)
+	r.POST("/collabs", sendGetCollabs)
 	r.Run()
 }
