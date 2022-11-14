@@ -1,22 +1,11 @@
 import Image from "next/image";
+import { useState } from "react";
 
-// export default function Collabs({ collabs }:{ collabs:SpotifyApi.TrackObjectFull[] }) {
-//     return <div>
-//         <p>COLLABS</p>
-//         <div>{collabs.map((track:SpotifyApi.TrackObjectFull)=>{
-//             return <div>
-//                 <div>{track.name}</div>
-//                 {/* TODO: Get pictures of artists who collabed for this track */}
-//             </div>;
-//         })}</div>
-//     </div>;
-// }
-
-// for testing, todo: remove later
-export default function Collabs({ collabs }:{ collabs:string[] }) {
+export default function Collabs({ collabIds }:{ collabIds:string[] }) {
+    const [collabs, setCollabs] = useState([] as SpotifyApi.TrackObjectFull[]);
     return <div>
         <p>COLLABS</p>
-        <div>{collabs.map((track:string)=>{
+        <div>{collabIds.map((track:string)=>{
             return <div key={track}>
                 <div>{track}</div>
                 {/* TODO: Get pictures of artists who collabed for this track */}

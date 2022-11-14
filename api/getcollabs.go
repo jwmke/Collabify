@@ -46,7 +46,6 @@ func getCollabs(request collabReq) []ID {
 	var collabs []ID
 
 	wg.Wait()
-
 	for trackId := range channel {
 		collabs = append(collabs, trackId)
 	}
@@ -57,7 +56,7 @@ func getCollabs(request collabReq) []ID {
 func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token string, channel chan ID) {
 	defer wg.Done()
 
-	albumUrl := fmt.Sprintf("https://api.spotify.com/v1/artists/%s/albums?include_groups=single%2Calbum&market=US&limit=50&offset=%d", artistId)
+	albumUrl := fmt.Sprintf("https://api.spotify.com/v1/artists/%s/albums?include_groups=single%%2Calbum&market=US&limit=50", artistId)
 	client := &http.Client{}
 	headers := http.Header{
 		"Accept":        {"application/json"},
@@ -71,7 +70,11 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 	for continueFlag {
 		req, _ := http.NewRequest("GET", albumUrl, nil)
 		req.Header = headers
-		res, _ := client.Do(req)
+		res, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 		defer res.Body.Close()
 		albumsReq := new(AlbumsReq)
 		json.NewDecoder(res.Body).Decode(albumsReq)
@@ -91,7 +94,11 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 		tracksUrl := fmt.Sprintf("https://api.spotify.com/v1/albums/%s/tracks?market=US&limit=50", albumId)
 		req, _ := http.NewRequest("GET", tracksUrl, nil)
 		req.Header = headers
-		res, _ := client.Do(req)
+		res, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 		defer res.Body.Close()
 		tracksReq := new(TracksReq)
 		json.NewDecoder(res.Body).Decode(tracksReq)
