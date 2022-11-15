@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
+	"time"
 )
 
 type AlbumsReq struct {
@@ -37,15 +39,15 @@ func getCollabs(request collabReq) []ID {
 	}
 
 	var wg sync.WaitGroup
+	wg.Add(len(artistIds))
 	channel := make(chan ID)
 	for _, id := range artistIds {
-		wg.Add(1)
 		go artistCollabs(&wg, id, artistIdMap, token, channel)
 	}
-
 	var collabs []ID
 
 	wg.Wait()
+	close(channel)
 	for trackId := range channel {
 		collabs = append(collabs, trackId)
 	}
@@ -55,61 +57,102 @@ func getCollabs(request collabReq) []ID {
 
 func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token string, channel chan ID) {
 	defer wg.Done()
-
-	albumUrl := fmt.Sprintf("https://api.spotify.com/v1/artists/%s/albums?include_groups=single%%2Calbum&market=US&limit=50", artistId)
 	client := &http.Client{}
-	headers := http.Header{
-		"Accept":        {"application/json"},
-		"Content-Type":  {"application/json"},
-		"Authorization": {fmt.Sprintf("Bearer %s", token)},
-	}
-
+	albumUrl := fmt.Sprintf("https://api.spotify.com/v1/artists/%s/albums?include_groups=single%%2Calbum&market=US&limit=50", artistId)
 	continueFlag := true
 	var albumIds []ID
-
 	for continueFlag {
 		req, _ := http.NewRequest("GET", albumUrl, nil)
-		req.Header = headers
+		req.Header = http.Header{
+			"Accept":        {"application/json"},
+			"Content-Type":  {"application/json"},
+			"Authorization": {fmt.Sprintf("Bearer %s", token)},
+		}
 		res, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		defer res.Body.Close()
-		albumsReq := new(AlbumsReq)
-		json.NewDecoder(res.Body).Decode(albumsReq)
+		if res.StatusCode == 429 {
+			retry, err := strconv.Atoi(res.Header.Get("Retry-After"))
+			fmt.Printf("Failed to retrieve albums, retrying in: %v.\n", retry)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			res.Body.Close()
+			time.Sleep(time.Duration(retry) * time.Second)
+		} else if res.StatusCode == 200 {
+			albumsReq := new(AlbumsReq)
+			json.NewDecoder(res.Body).Decode(albumsReq)
+			res.Body.Close()
 
-		for _, album := range albumsReq.Items {
-			albumIds = append(albumIds, album.ID)
-		}
+			for _, album := range albumsReq.Items {
+				albumIds = append(albumIds, album.ID)
+			}
 
-		if albumsReq.Next != nil {
-			albumUrl = *albumsReq.Next
+			if albumsReq.Next != nil {
+				albumUrl = *albumsReq.Next
+			} else {
+				continueFlag = false
+			}
 		} else {
-			continueFlag = false
+			fmt.Printf("Status code expected: 200\nStatus code received: %v\n", res.StatusCode)
+			res.Body.Close()
+			return
 		}
 	}
 
+	var tracksWg sync.WaitGroup
+	tracksWg.Add(len(albumIds))
 	for _, albumId := range albumIds {
+		go getCollabsFromAlbums(&tracksWg, albumId, idMap, token, channel, client)
+	}
+	tracksWg.Wait()
+}
+
+func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, idMap map[ID]bool, token string, channel chan ID, client *http.Client) {
+	defer tracksWg.Done()
+	for {
 		tracksUrl := fmt.Sprintf("https://api.spotify.com/v1/albums/%s/tracks?market=US&limit=50", albumId)
 		req, _ := http.NewRequest("GET", tracksUrl, nil)
-		req.Header = headers
+		req.Header = http.Header{
+			"Accept":        {"application/json"},
+			"Content-Type":  {"application/json"},
+			"Authorization": {fmt.Sprintf("Bearer %s", token)},
+		}
 		res, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		defer res.Body.Close()
-		tracksReq := new(TracksReq)
-		json.NewDecoder(res.Body).Decode(tracksReq)
+		if res.StatusCode == 200 {
+			tracksReq := new(TracksReq)
+			json.NewDecoder(res.Body).Decode(tracksReq)
+			res.Body.Close()
 
-		for _, track := range tracksReq.Items {
-			trackArtists := track.Artists[1:]
-			for _, trackArtist := range trackArtists {
-				if _, check := idMap[trackArtist.ID]; check {
-					channel <- track.ID
+			for _, track := range tracksReq.Items {
+				trackArtists := track.Artists[1:]
+				for _, trackArtist := range trackArtists {
+					if _, check := idMap[trackArtist.ID]; check {
+						channel <- track.ID
+					}
 				}
 			}
+			return
+		} else if res.StatusCode == 429 {
+			retry, err := strconv.Atoi(res.Header.Get("Retry-After"))
+			fmt.Printf("Failed to retrieve tracks, retrying in: %v.\n", retry)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			res.Body.Close()
+			time.Sleep(time.Duration(retry) * time.Second)
+		} else {
+			fmt.Printf("Status code expected: 200\nStatus code received: %v\n", res.StatusCode)
+			res.Body.Close()
+			return
 		}
 	}
 }
