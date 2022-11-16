@@ -75,13 +75,12 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 		}
 		if res.StatusCode == 429 {
 			retry, err := strconv.Atoi(res.Header.Get("Retry-After"))
-			fmt.Printf("Failed to retrieve albums, retrying in: %v.\n", retry)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 			res.Body.Close()
-			time.Sleep(time.Duration(retry) * time.Second)
+			time.Sleep(time.Duration(retry+1) * time.Second)
 		} else if res.StatusCode == 200 {
 			albumsReq := new(AlbumsReq)
 			json.NewDecoder(res.Body).Decode(albumsReq)
@@ -106,12 +105,12 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 	var tracksWg sync.WaitGroup
 	tracksWg.Add(len(albumIds))
 	for _, albumId := range albumIds {
-		go getCollabsFromAlbums(&tracksWg, albumId, idMap, token, channel, client)
+		go getCollabsFromAlbums(&tracksWg, albumId, artistId, idMap, token, channel, client)
 	}
 	tracksWg.Wait()
 }
 
-func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, idMap map[ID]bool, token string, channel chan ID, client *http.Client) {
+func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idMap map[ID]bool, token string, channel chan ID, client *http.Client) {
 	defer tracksWg.Done()
 	for {
 		tracksUrl := fmt.Sprintf("https://api.spotify.com/v1/albums/%s/tracks?market=US&limit=50", albumId)
@@ -135,20 +134,21 @@ func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, idMap map[ID]boo
 				trackArtists := track.Artists[1:]
 				for _, trackArtist := range trackArtists {
 					if _, check := idMap[trackArtist.ID]; check {
-						channel <- track.ID
+						if trackArtist.ID != artistId {
+							channel <- track.ID
+						}
 					}
 				}
 			}
 			return
 		} else if res.StatusCode == 429 {
 			retry, err := strconv.Atoi(res.Header.Get("Retry-After"))
-			fmt.Printf("Failed to retrieve tracks, retrying in: %v.\n", retry)
 			if err != nil {
 				fmt.Println(err)
 				return
 			}
 			res.Body.Close()
-			time.Sleep(time.Duration(retry) * time.Second)
+			time.Sleep(time.Duration(retry+1) * time.Second)
 		} else {
 			fmt.Printf("Status code expected: 200\nStatus code received: %v\n", res.StatusCode)
 			res.Body.Close()
