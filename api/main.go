@@ -2,17 +2,36 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	socketio "github.com/googollee/go-socket.io"
 )
 
 type collabReq struct {
 	Token   string `json:"token"`
 	Artists []ID   `json:"artists"`
+}
+
+func GinMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Length, Content-Type")
+		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length")
+
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Request.Header.Del("Origin")
+
+		c.Next()
+	}
 }
 
 // 1. When post endpoint is called, create hashmap of artists
@@ -45,17 +64,13 @@ func sendGetCollabs(c *gin.Context) {
 }
 
 func main() {
-	r := gin.Default()
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://127.0.0.1"},
-		AllowMethods:     []string{"POST", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		AllowAllOrigins:  false,
-		AllowOriginFunc:  func(origin string) bool { return true },
-		MaxAge:           12 * time.Hour,
-	}))
-	r.POST("/collabs", sendGetCollabs)
-	r.Run()
+	router := gin.New()
+	server := socketio.NewServer(nil)
+	router.Use(GinMiddleware())
+	router.GET("/socket.io/*any", gin.WrapH(server))
+	router.POST("/socket.io/*any", gin.WrapH(server))
+	router.POST("/collabs", sendGetCollabs)
+	if err := router.Run(":8080"); err != nil {
+		fmt.Printf("failed run app: %v\n", err)
+	}
 }
