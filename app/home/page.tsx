@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import Following from '../../components/Following';
 import Collabs from '../../components/Collabs';
 import { Grid } from 'react-loading-icons';
+import { io } from "socket.io-client";
+
+const socket = io('http://localhost:8080');
 
 const ORIGINAL_URL = "https://api.spotify.com/v1/me/following?type=artist&limit=50";
 
@@ -12,6 +15,7 @@ export default function Home() {
     const [url, setUrl] = useState(ORIGINAL_URL);
     const [collabIds, setCollabIds] = useState([] as string[]);
     const [artistIds, setArtistIds] = useState([] as string[]);
+    const [isConnected, setIsConnected] = useState(socket.connected);
     
     const fetchArtists = () => {
         fetch(url, {
@@ -34,27 +38,33 @@ export default function Home() {
     }
 
     const findCollabs = () => {
-        fetch("http://127.0.0.1:8080/collabs", { // TODO: Change to backend url before deploying
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(
-                {
-                    "token": localStorage.getItem("accessToken"),
-                    "artists": artistIds
-                }
-            )
-        })
-        .then((res) => res.json())
-        .then((data) => {
-            setCollabIds(data.trackIds);
-        })
+        socket.emit('getCollabs', JSON.stringify(
+            {
+                "token": localStorage.getItem("accessToken"),
+                "artists": artistIds
+            }
+        ));
     }
 
     useEffect(()=> {
         fetchArtists();
+        socket.on('connect', () => {
+            setIsConnected(true);
+        });
+      
+        socket.on('disconnect', () => {
+            setIsConnected(false);
+        });
+
+        socket.on('addCollab', (collabId) => {
+            setCollabIds([collabId, ...collabIds]);
+        });
+
+        return () => {
+            socket.off('connect');
+            socket.off('disconnect');
+            socket.off('addCollab');
+        };
     }, []);
 
     useEffect(()=> {
