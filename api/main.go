@@ -66,10 +66,43 @@ func sendGetCollabs(c *gin.Context) {
 func main() {
 	router := gin.New()
 	server := socketio.NewServer(nil)
+
+	server.OnConnect("/", func(s socketio.Conn) error {
+		s.SetContext("")
+		fmt.Println("connected:", s.ID())
+		return nil
+	})
+
+	server.OnEvent("/", "getCollabs", func(s socketio.Conn, params string) {
+		fmt.Println("Getting collabs for", params)
+		// s.Emit()
+	})
+
+	server.OnEvent("/", "disconnect", func(s socketio.Conn) string {
+		last := s.Context().(string)
+		s.Close()
+		return last
+	})
+
+	server.OnError("/", func(s socketio.Conn, e error) {
+		fmt.Println("error:", e)
+	})
+
+	server.OnDisconnect("/", func(s socketio.Conn, msg string) {
+		fmt.Println("closed", msg)
+	})
+
+	go func() {
+		if err := server.Serve(); err != nil {
+			fmt.Printf("socketio listen error: %s\n", err)
+		}
+	}()
+	defer server.Close()
+
 	router.Use(GinMiddleware())
 	router.GET("/socket.io/*any", gin.WrapH(server))
 	router.POST("/socket.io/*any", gin.WrapH(server))
-	router.POST("/collabs", sendGetCollabs)
+	// router.POST("/collabs", sendGetCollabs)
 	if err := router.Run(":8080"); err != nil {
 		fmt.Printf("failed run app: %v\n", err)
 	}

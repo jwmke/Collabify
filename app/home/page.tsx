@@ -5,7 +5,7 @@ import Collabs from '../../components/Collabs';
 import { Grid } from 'react-loading-icons';
 import { io } from "socket.io-client";
 
-const socket = io('http://localhost:8080');
+const socket = io('http://127.0.0.1:8080/socket.io/');
 
 const ORIGINAL_URL = "https://api.spotify.com/v1/me/following?type=artist&limit=50";
 
@@ -48,21 +48,11 @@ export default function Home() {
 
     useEffect(()=> {
         fetchArtists();
-        socket.on('connect', () => {
-            setIsConnected(true);
-        });
-      
-        socket.on('disconnect', () => {
-            setIsConnected(false);
-        });
-
         socket.on('addCollab', (collabId) => {
             setCollabIds([collabId, ...collabIds]);
         });
 
         return () => {
-            socket.off('connect');
-            socket.off('disconnect');
             socket.off('addCollab');
         };
     }, []);
