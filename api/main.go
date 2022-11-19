@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
@@ -26,15 +27,8 @@ var (
 func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	wsUpgrader.CheckOrigin = func(r *http.Request) bool {
-		return true
-		// 	AllowOrigins:     []string{"http://127.0.0.1"},
-		// 	AllowMethods:     []string{"POST", "OPTIONS"},
-		// 	AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type"},
-		// 	ExposeHeaders:    []string{"Content-Length"},
-		// 	AllowCredentials: true,
-		// 	AllowAllOrigins:  false,
-		// 	AllowOriginFunc:  func(origin string) bool { return true },
-		// 	MaxAge:           12 * time.Hour,
+		origin := r.Header.Get("Origin")
+		return origin == "http://127.0.0.1:3000" // Change before deployment
 	}
 
 	wsConn, err := wsUpgrader.Upgrade(w, r, nil)
@@ -63,5 +57,10 @@ func main() {
 
 	router.HandleFunc("/socket", WsEndpoint)
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	headersOk := handlers.AllowedHeaders([]string{"Origin", "Content-Length", "Content-Type"})
+	originsOk := handlers.AllowedOrigins([]string{"http://127.0.0.1:3000"}) // Change before deployment
+	methodsOk := handlers.AllowedMethods([]string{"POST", "OPTIONS"})
+	exposeHeaders := handlers.ExposedHeaders([]string{"Content-Length"})
+
+	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(originsOk, headersOk, methodsOk, exposeHeaders)(router)))
 }

@@ -32,13 +32,15 @@ type TracksReq struct {
 }
 
 type TrackResp struct {
-	Track ID `json:"id"`
+	Id      ID             `json:"id"`
+	Artists []SimpleArtist `json:"artists"`
+	Name    string         `json:"name"`
 }
 
 func getCollabs(request collabReq, wsConn *websocket.Conn) {
 	token := request.Token
 	artistIds := request.Artists
-	fmt.Println("Getting colabs (delete this print later)")
+	fmt.Println("Getting collabs") // TODO delete later
 	artistIdMap := make(map[ID]bool)
 	for _, id := range artistIds {
 		artistIdMap[id] = true
@@ -51,12 +53,6 @@ func getCollabs(request collabReq, wsConn *websocket.Conn) {
 	}
 
 	wg.Wait()
-	// var collabs []ID
-	// for trackId := range channel {
-	// 	collabs = append(collabs, trackId)
-	// }
-
-	// return removeDuplicateValues(collabs)
 }
 
 func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token string, wsConn *websocket.Conn) {
@@ -142,9 +138,11 @@ func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idM
 				for _, trackArtist := range trackArtists {
 					if _, check := idMap[trackArtist.ID]; check {
 						if trackArtist.ID != artistId {
-							fmt.Println(track.Name)
+							fmt.Println(track.Name) // TODO delete later
 							var returnTrack TrackResp
-							returnTrack.Track = track.ID
+							returnTrack.Id = track.ID
+							returnTrack.Artists = track.Artists
+							returnTrack.Name = track.Name
 							err := wsConn.WriteJSON(returnTrack)
 							if err != nil {
 								fmt.Printf("Error sending message: %v\n", err.Error())
