@@ -29,10 +29,10 @@ type TracksReq struct {
 	Total    int           `json:"total"`
 }
 
-func getCollabs(request collabReq) []ID {
+func getCollabs(request collabReq, channel chan ID) []ID {
 	token := request.Token
 	artistIds := request.Artists
-
+	fmt.Println("Getting colabs (delete this print later)")
 	artistIdMap := make(map[ID]bool)
 	for _, id := range artistIds {
 		artistIdMap[id] = true
@@ -40,7 +40,6 @@ func getCollabs(request collabReq) []ID {
 
 	var wg sync.WaitGroup
 	wg.Add(len(artistIds))
-	channel := make(chan ID)
 	for _, id := range artistIds {
 		go artistCollabs(&wg, id, artistIdMap, token, channel)
 	}
@@ -48,11 +47,11 @@ func getCollabs(request collabReq) []ID {
 
 	wg.Wait()
 	close(channel)
-	for trackId := range channel {
-		collabs = append(collabs, trackId)
-	}
+	// for trackId := range channel {
+	// 	collabs = append(collabs, trackId)
+	// }
 
-	return removeDuplicateValues(collabs)
+	// return removeDuplicateValues(collabs)
 }
 
 func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token string, channel chan ID) {
@@ -112,6 +111,7 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 
 func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idMap map[ID]bool, token string, channel chan ID, client *http.Client) {
 	defer tracksWg.Done()
+
 	for {
 		tracksUrl := fmt.Sprintf("https://api.spotify.com/v1/albums/%s/tracks?market=US&limit=50", albumId)
 		req, _ := http.NewRequest("GET", tracksUrl, nil)
@@ -132,9 +132,11 @@ func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idM
 
 			for _, track := range tracksReq.Items {
 				trackArtists := track.Artists[1:]
+
 				for _, trackArtist := range trackArtists {
 					if _, check := idMap[trackArtist.ID]; check {
 						if trackArtist.ID != artistId {
+							fmt.Println(track.Name, "(delete this print later)")
 							channel <- track.ID
 						}
 					}
@@ -155,18 +157,4 @@ func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idM
 			return
 		}
 	}
-}
-
-func removeDuplicateValues(intSlice []ID) []ID {
-	keys := make(map[ID]bool)
-	list := []ID{}
-
-	for _, entry := range intSlice {
-		if _, value := keys[entry]; !value {
-			keys[entry] = true
-			list = append(list, entry)
-		}
-	}
-
-	return list
 }

@@ -1,13 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
-	socketio "github.com/googollee/go-socket.io"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 )
 
 type collabReq struct {
@@ -15,95 +14,70 @@ type collabReq struct {
 	Artists []ID   `json:"artists"`
 }
 
-func GinMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1")
-		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Length, Content-Type")
-		c.Writer.Header().Set("Access-Control-Expose-Headers", "Content-Length")
+var (
+	wsUpgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+	}
 
-		if c.Request.Method == http.MethodOptions {
-			c.AbortWithStatus(http.StatusNoContent)
-			return
+	wsConn *websocket.Conn
+)
+
+func WsEndpoint(w http.ResponseWriter, r *http.Request) {
+
+	channel := make(chan ID)
+
+	wsUpgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+		// 	AllowOrigins:     []string{"http://127.0.0.1"},
+		// 	AllowMethods:     []string{"POST", "OPTIONS"},
+		// 	AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type"},
+		// 	ExposeHeaders:    []string{"Content-Length"},
+		// 	AllowCredentials: true,
+		// 	AllowAllOrigins:  false,
+		// 	AllowOriginFunc:  func(origin string) bool { return true },
+		// 	MaxAge:           12 * time.Hour,
+	}
+
+	wsConn, err := wsUpgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Printf("Could not upgrade: %v\n", err.Error())
+		return
+	}
+
+	defer wsConn.Close()
+
+	gettingColabs := false
+
+	for {
+		var req collabReq
+
+		err := wsConn.ReadJSON(&req)
+		if err != nil {
+			fmt.Printf("Error reading request: %v\n", err.Error())
+			break
 		}
 
-		c.Request.Header.Del("Origin")
-
-		c.Next()
+		// TODO: investigate
+		if !gettingColabs {
+			go getCollabs(req, channel)
+		}
+		id := <-channel
+		sendID(id)
 	}
 }
 
-// 1. When post endpoint is called, create hashmap of artists
-// 2. for each artist start a goroutine, in the routine: Retrieve all albums
-// 3. check if any artists in ownership of album are included in artist hashmap
-// 4. if yes, iterate through album to find song that contains collaberation between both artists and append to return list
-// 5. concatinate return lists from all goroutines into single list, ensuring to remove duplicates
-// 6. return single list to frontend
-
-func sendGetCollabs(c *gin.Context) {
-	var request collabReq
-	body, err := ioutil.ReadAll(c.Request.Body)
+func sendID(id ID) {
+	err := wsConn.WriteMessage(websocket.TextMessage, []byte(id))
 	if err != nil {
-		c.AbortWithError(400, err)
-		return
+		fmt.Printf("Error sending message: %v\n", err.Error())
 	}
-
-	err = json.Unmarshal(body, &request)
-	if err != nil {
-		c.AbortWithError(400, err)
-		return
-	}
-
-	trackIds := getCollabs(request)
-	jsonTrackIds, _ := json.Marshal(trackIds)
-
-	c.JSON(http.StatusOK, gin.H{
-		"trackIds": jsonTrackIds,
-	})
 }
 
 func main() {
-	router := gin.New()
-	server := socketio.NewServer(nil)
+	router := mux.NewRouter()
 
-	server.OnConnect("/", func(s socketio.Conn) error {
-		s.SetContext("")
-		fmt.Println("connected:", s.ID())
-		return nil
-	})
+	router.HandleFunc("/socket", WsEndpoint)
 
-	server.OnEvent("/", "getCollabs", func(s socketio.Conn, params string) {
-		fmt.Println("Getting collabs for", params)
-		// s.Emit()
-	})
-
-	server.OnEvent("/", "disconnect", func(s socketio.Conn) string {
-		last := s.Context().(string)
-		s.Close()
-		return last
-	})
-
-	server.OnError("/", func(s socketio.Conn, e error) {
-		fmt.Println("error:", e)
-	})
-
-	server.OnDisconnect("/", func(s socketio.Conn, msg string) {
-		fmt.Println("closed", msg)
-	})
-
-	go func() {
-		if err := server.Serve(); err != nil {
-			fmt.Printf("socketio listen error: %s\n", err)
-		}
-	}()
-	defer server.Close()
-
-	router.Use(GinMiddleware())
-	router.GET("/socket.io/*any", gin.WrapH(server))
-	router.POST("/socket.io/*any", gin.WrapH(server))
-	// router.POST("/collabs", sendGetCollabs)
-	if err := router.Run(":8080"); err != nil {
-		fmt.Printf("failed run app: %v\n", err)
-	}
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
