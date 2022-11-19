@@ -50,12 +50,12 @@ export default function Home() {
         ws.current.onclose = () => console.log("ws closed");
 
         ws.current.onmessage = e => {
-            const id = JSON.parse(e.data);
-            console.log(id);
-            //setCollabIds([collabId, ...collabIds]); // TODO check for duplicates before append
+            const track = JSON.parse(e.data);
+            if (!collabIds.includes(track.id)) {
+                console.log(track.id); //setCollabIds([track.id, ...collabIds]);
+            }
         };
 
-        // ensure close() is refering to same ws instance
         const wsCurrent = ws.current;
         return () => {
             wsCurrent.close();

@@ -25,8 +25,6 @@ var (
 
 func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 
-	channel := make(chan ID)
-
 	wsUpgrader.CheckOrigin = func(r *http.Request) bool {
 		return true
 		// 	AllowOrigins:     []string{"http://127.0.0.1"},
@@ -47,8 +45,6 @@ func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	defer wsConn.Close()
 
-	gettingColabs := false
-
 	for {
 		var req collabReq
 
@@ -57,20 +53,8 @@ func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("Error reading request: %v\n", err.Error())
 			break
 		}
-
-		// TODO: investigate
-		if !gettingColabs {
-			go getCollabs(req, channel)
-		}
-		id := <-channel
-		sendID(id)
-	}
-}
-
-func sendID(id ID) {
-	err := wsConn.WriteMessage(websocket.TextMessage, []byte(id))
-	if err != nil {
-		fmt.Printf("Error sending message: %v\n", err.Error())
+		// todo ensure same func can't run at twice at same time
+		getCollabs(req, wsConn)
 	}
 }
 
