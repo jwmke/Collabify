@@ -1,7 +1,7 @@
 "use client";
 import { useEffect } from 'react';
 import { useRouter } from "next/navigation";
-import { Grid } from 'react-loading-icons';
+import Loading from '../../components/Loading';
 
 const getReturnedParamsFromSpotifyAuth = (hash: string) => {
     const stringAfterHashtag = hash.substring(1);
@@ -30,5 +30,5 @@ export default function Page() {
         }
     }, []);
 
-    return <Grid fill="#1DB954"/>;
+    return <Loading>Loading...</Loading>
 }

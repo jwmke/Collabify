@@ -2,14 +2,15 @@
 import { useEffect, useRef, useState } from 'react';
 import Following from '../../components/Following';
 import Collabs from '../../components/Collabs';
-import { Grid } from 'react-loading-icons';
+import Loading from '../../components/Loading';
 import { Collab } from '../../custom-types';
 
 const ORIGINAL_URL = "https://api.spotify.com/v1/me/following?type=artist&limit=50";
 
 export default function Home() {
-    const [artists, setArtists] = useState([] as SpotifyApi.ArtistObjectFull[])
-    const [isLoading, setLoading] = useState(true)
+    const [artists, setArtists] = useState([] as SpotifyApi.ArtistObjectFull[]);
+    const [isLoading, setLoading] = useState(true);
+    const [loadingMessage, setLoadingMessage] = useState("Loading...");
     const [url, setUrl] = useState(ORIGINAL_URL);
     const [collabTracks, setCollabTracks] = useState([] as Collab[]);
     const [finalCollabs, setFinalCollabs] = useState([] as Collab[]);
@@ -37,7 +38,8 @@ export default function Home() {
     }
 
     const findCollabs = () => {
-        setLoading(true); // retrieving collabs loading page or ("logging in" & "retrieving collabs" msgs param)
+        setLoadingMessage("Finding All Collabs...");
+        setLoading(true);
         ws.current?.send(JSON.stringify(
             {
                 "token": localStorage.getItem("accessToken"),
@@ -96,7 +98,7 @@ export default function Home() {
         )
     }, [artists]);
 
-    if (isLoading || !artists) return <Grid fill="#1DB954"/>;
+    if (isLoading || !artists) return <Loading>{loadingMessage}</Loading>;
 
     return <div>
         {finalCollabs.length > 0 ? <Collabs collabTracks={finalCollabs}/> : <Following following={artists} findCollabs={findCollabs}/> }
