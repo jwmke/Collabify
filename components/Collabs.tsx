@@ -11,6 +11,7 @@ export default function Collabs({ collabTracks }:{ collabTracks:Collab[] }) {
                 <div>{track.name}</div>
                 <div>{track.artists[0].name}</div>
                 {/* TODO: Get pictures of artists who collabed for this track */}
+                <br/>
             </div>;
         })}</div>
     </div>;

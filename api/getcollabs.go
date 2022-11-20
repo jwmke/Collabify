@@ -40,7 +40,6 @@ type TrackResp struct {
 func getCollabs(request collabReq, wsConn *websocket.Conn) {
 	token := request.Token
 	artistIds := request.Artists
-	fmt.Println("Getting collabs") // TODO delete later
 	artistIdMap := make(map[ID]bool)
 	for _, id := range artistIds {
 		artistIdMap[id] = true
@@ -80,8 +79,7 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 				return
 			}
 			res.Body.Close()
-			fmt.Println(retry) // TODO delete later
-			time.Sleep(time.Duration(retry+1) * time.Second)
+			time.Sleep(time.Duration(retry+2) * time.Second)
 		} else if res.StatusCode == 200 {
 			albumsReq := new(AlbumsReq)
 			json.NewDecoder(res.Body).Decode(albumsReq)
@@ -138,7 +136,7 @@ func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idM
 				for _, trackArtist := range trackArtists {
 					if _, check := idMap[trackArtist.ID]; check {
 						if trackArtist.ID != artistId {
-							fmt.Println(track.Name) // TODO delete later
+							// TODO ensure two goroutines don't send ws msgs at same time
 							var returnTrack TrackResp
 							returnTrack.Id = track.ID
 							returnTrack.Artists = track.Artists
@@ -159,7 +157,7 @@ func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idM
 				return
 			}
 			res.Body.Close()
-			time.Sleep(time.Duration(retry+1) * time.Second)
+			time.Sleep(time.Duration(retry+2) * time.Second)
 		} else {
 			fmt.Printf("Status code expected: 200\nStatus code received: %v\n", res.StatusCode)
 			res.Body.Close()

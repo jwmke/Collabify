@@ -20,8 +20,6 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-
-	wsConn *websocket.Conn
 )
 
 func WsEndpoint(w http.ResponseWriter, r *http.Request) {

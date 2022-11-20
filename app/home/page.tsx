@@ -12,6 +12,7 @@ export default function Home() {
     const [isLoading, setLoading] = useState(true)
     const [url, setUrl] = useState(ORIGINAL_URL);
     const [collabTracks, setCollabTracks] = useState([] as Collab[]);
+    const [finalCollabs, setFinalCollabs] = useState([] as Collab[]);
     const [artistIds, setArtistIds] = useState([] as string[]);
     const ws = useRef(null as WebSocket | null);
     
@@ -53,15 +54,15 @@ export default function Home() {
 
         ws.current.onmessage = e => {
             const track = JSON.parse(e.data);
-            if (!collabTracks.includes(track.id)) {
-                const collab:Collab = {
-                    id: track.id,
-                    artists: track.artists,
-                    name: track.name
-                }
-                console.log(JSON.stringify(collab)); // todo delete later
-                setCollabTracks([collab, ...collabTracks]);
+            const collab:Collab = {
+                id: track.id,
+                artists: track.artists,
+                name: track.name
             }
+            if (isLoading) {
+                setLoading(false);
+            }
+            setCollabTracks(current => [...current, collab]);
         };
 
         const wsCurrent = ws.current;
@@ -69,6 +70,16 @@ export default function Home() {
             wsCurrent.close();
         };
     }, []);
+    
+    useEffect(()=> {
+        const uniqueNames = new Set();
+        const collabArray = collabTracks.filter(track => {
+            const isDuplicate = uniqueNames.has(track.name);
+            uniqueNames.add(track.name);
+            return !isDuplicate;
+        });
+        setFinalCollabs(collabArray);
+    }, [collabTracks])
 
     useEffect(()=> {
         if (url !== ORIGINAL_URL) {
@@ -87,6 +98,6 @@ export default function Home() {
     if (isLoading || !artists) return <Grid fill="#1DB954"/>;
 
     return <div>
-        {collabTracks.length > 0 ? <Collabs collabTracks={collabTracks}/> : <Following following={artists} findCollabs={findCollabs}/> }
+        {finalCollabs.length > 0 ? <Collabs collabTracks={finalCollabs}/> : <Following following={artists} findCollabs={findCollabs}/> }
     </div>;
 }
