@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -13,6 +14,11 @@ import (
 type collabReq struct {
 	Token   string `json:"token"`
 	Artists []ID   `json:"artists"`
+}
+
+type Connection struct {
+	Socket *websocket.Conn
+	mu     sync.Mutex
 }
 
 var (
@@ -37,6 +43,8 @@ func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	defer wsConn.Close()
 
+	var sockets = make(map[string]*Connection)
+
 	for {
 		var req collabReq
 
@@ -45,9 +53,21 @@ func WsEndpoint(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("Error reading request: %v\n", err.Error())
 			break
 		}
-		// todo ensure same func can't run at twice at same time
-		getCollabs(req, wsConn)
+		if sockets[req.Token] == nil {
+			connection := new(Connection)
+			connection.Socket = wsConn
+			sockets[req.Token] = connection
+		}
+		for _, connection := range sockets {
+			getCollabs(req, connection)
+		}
 	}
+}
+
+func (c *Connection) Send(returnTrack TrackResp) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.Socket.WriteJSON(returnTrack)
 }
 
 func main() {

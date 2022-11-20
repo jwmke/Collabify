@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"sync"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 type AlbumsReq struct {
@@ -37,7 +35,7 @@ type TrackResp struct {
 	Name    string         `json:"name"`
 }
 
-func getCollabs(request collabReq, wsConn *websocket.Conn) {
+func getCollabs(request collabReq, wsConn *Connection) {
 	token := request.Token
 	artistIds := request.Artists
 	artistIdMap := make(map[ID]bool)
@@ -54,7 +52,7 @@ func getCollabs(request collabReq, wsConn *websocket.Conn) {
 	wg.Wait()
 }
 
-func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token string, wsConn *websocket.Conn) {
+func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token string, wsConn *Connection) {
 	defer wg.Done()
 	client := &http.Client{}
 	albumUrl := fmt.Sprintf("https://api.spotify.com/v1/artists/%s/albums?include_groups=single%%2Calbum&market=US&limit=50", artistId)
@@ -109,7 +107,7 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 	tracksWg.Wait()
 }
 
-func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idMap map[ID]bool, token string, wsConn *websocket.Conn, client *http.Client) {
+func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idMap map[ID]bool, token string, wsConn *Connection, client *http.Client) {
 	defer tracksWg.Done()
 
 	for {
@@ -136,12 +134,11 @@ func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idM
 				for _, trackArtist := range trackArtists {
 					if _, check := idMap[trackArtist.ID]; check {
 						if trackArtist.ID != artistId {
-							// TODO ensure two goroutines don't send ws msgs at same time
 							var returnTrack TrackResp
 							returnTrack.Id = track.ID
 							returnTrack.Artists = track.Artists
 							returnTrack.Name = track.Name
-							err := wsConn.WriteJSON(returnTrack)
+							err := wsConn.Send(returnTrack)
 							if err != nil {
 								fmt.Printf("Error sending message: %v\n", err.Error())
 							}
