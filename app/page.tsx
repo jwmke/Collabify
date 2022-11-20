@@ -22,7 +22,7 @@ export default function Page() {
     };
 
     return <div>
-        <p>Hello World!</p>
+        <p className="text-3xl font-bold underline">Hello World!</p>
         <button onClick={handleLogin}>login to spotify</button>
     </div>;
 }
