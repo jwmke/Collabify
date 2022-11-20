@@ -10,6 +10,7 @@ export default function Collabs({ collabTracks }:{ collabTracks:Collab[] }) {
             return <div key={track.id}>
                 <div>{track.name}</div>
                 <div>{track.artists[0].name}</div>
+                <Image src={track.img.url} alt={track.name} width={160} height={160}/>
                 <br/>
             </div>;
         })}</div>

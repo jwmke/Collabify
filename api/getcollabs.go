@@ -33,6 +33,12 @@ type TrackResp struct {
 	Id      ID             `json:"id"`
 	Artists []SimpleArtist `json:"artists"`
 	Name    string         `json:"name"`
+	Image   Image          `json:"img"`
+}
+
+type AlbumResp struct {
+	Id    ID    `json:"id"`
+	Image Image `json:"img"`
 }
 
 func getCollabs(request collabReq, wsConn *Connection) {
@@ -57,7 +63,7 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 	client := &http.Client{}
 	albumUrl := fmt.Sprintf("https://api.spotify.com/v1/artists/%s/albums?include_groups=single%%2Calbum&market=US&limit=50", artistId)
 	continueFlag := true
-	var albumIds []ID
+	var albumIds []AlbumResp
 	for continueFlag {
 		req, _ := http.NewRequest("GET", albumUrl, nil)
 		req.Header = http.Header{
@@ -84,7 +90,10 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 			res.Body.Close()
 
 			for _, album := range albumsReq.Items {
-				albumIds = append(albumIds, album.ID)
+				var albumResp AlbumResp
+				albumResp.Id = album.ID
+				albumResp.Image = album.Images[2]
+				albumIds = append(albumIds, albumResp)
 			}
 
 			if albumsReq.Next != nil {
@@ -101,17 +110,17 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 
 	var tracksWg sync.WaitGroup
 	tracksWg.Add(len(albumIds))
-	for _, albumId := range albumIds {
-		go getCollabsFromAlbums(&tracksWg, albumId, artistId, idMap, token, wsConn, client)
+	for _, albumResp := range albumIds {
+		go getCollabsFromAlbums(&tracksWg, albumResp, artistId, idMap, token, wsConn, client)
 	}
 	tracksWg.Wait()
 }
 
-func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idMap map[ID]bool, token string, wsConn *Connection, client *http.Client) {
+func getCollabsFromAlbums(tracksWg *sync.WaitGroup, album AlbumResp, artistId ID, idMap map[ID]bool, token string, wsConn *Connection, client *http.Client) {
 	defer tracksWg.Done()
 
 	for {
-		tracksUrl := fmt.Sprintf("https://api.spotify.com/v1/albums/%s/tracks?market=US&limit=50", albumId)
+		tracksUrl := fmt.Sprintf("https://api.spotify.com/v1/albums/%s/tracks?market=US&limit=50", album.Id)
 		req, _ := http.NewRequest("GET", tracksUrl, nil)
 		req.Header = http.Header{
 			"Accept":        {"application/json"},
@@ -138,6 +147,7 @@ func getCollabsFromAlbums(tracksWg *sync.WaitGroup, albumId ID, artistId ID, idM
 							returnTrack.Id = track.ID
 							returnTrack.Artists = track.Artists
 							returnTrack.Name = track.Name
+							returnTrack.Image = album.Image
 							err := wsConn.Send(returnTrack)
 							if err != nil {
 								fmt.Printf("Error sending message: %v\n", err.Error())

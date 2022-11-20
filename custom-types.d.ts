@@ -1,5 +1,6 @@
 export interface Collab {
     id: string
     artists: SpotifyApi.ArtistObjectSimplified[]
-    name: string
+    name: string,
+    img: SpotifyApi.ImageObject
 }

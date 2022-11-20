@@ -57,12 +57,13 @@ export default function Home() {
             const collab:Collab = {
                 id: track.id,
                 artists: track.artists,
-                name: track.name
+                name: track.name,
+                img: track.img
             }
             if (isLoading) {
                 setLoading(false);
             }
-            setCollabTracks(current => [...current, collab]);
+            setCollabTracks(current => [collab, ...current]);
         };
 
         const wsCurrent = ws.current;
