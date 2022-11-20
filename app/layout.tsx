@@ -7,7 +7,11 @@ export default function RootLayout({
 }) {
   return (
     <html>
-      <head></head>
+      <head>
+        <title>Collabify</title>
+        <meta name="description" content="Discover all of the collaborations between your favorite artists on Spotify." />
+        <link rel="icon" href="/favicon/favicon.ico" />
+      </head>
       <body>{children}</body>
     </html>
   )

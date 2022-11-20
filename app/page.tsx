@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from "react";
+import Image from 'next/image';
+import Button from "../components/Button";
 
 const CLIENT_ID = "16f321bce7d5401ca1f1671d3f55720e";
 const SPOTIFY_AUTHORIZE_ENDPOINT = "https://accounts.spotify.com/authorize";
@@ -21,8 +23,16 @@ export default function Page() {
         }
     };
 
-    return <div>
-        <p className="text-3xl font-bold underline">Hello World!</p>
-        <button onClick={handleLogin}>login to spotify</button>
+    return <div className="h-screen bg-dark-gray font-lato">
+        <div className="mx-auto w-3/4">
+            <Image className="mx-auto pt-10" width={500} height={500} src={"/img/c-t-t.png"} alt="collabify-logo" priority/>
+            <h1 className="text-white font-bold text-5xl text-center">Welcome to Collabify</h1>
+            <div className="w-96 text-center mx-auto mt-8">
+                <p className="text-white text-xl">Discover all of the collaborations between your favorite artists on Spotify.</p>
+            </div>
+            <div className="text-center mt-16 w-80 mx-auto">
+                <Button onClick={handleLogin} size="lg">Log In With Spotify</Button>
+            </div>
+        </div>
     </div>;
 }
