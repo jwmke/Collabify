@@ -92,7 +92,7 @@ func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 			for _, album := range albumsReq.Items {
 				var albumResp AlbumResp
 				albumResp.Id = album.ID
-				albumResp.Image = album.Images[2]
+				albumResp.Image = album.Images[1]
 				albumIds = append(albumIds, albumResp)
 			}
 

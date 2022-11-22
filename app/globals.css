@@ -30,3 +30,28 @@ a {
     background: black;
   }
 }
+
+.hw160 {
+  height: 160px;
+  width: 160px;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #292929 #535353;
+}
+
+*::-webkit-scrollbar {
+  width: 15px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #535353;
+  border-radius: 5px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #292929;
+  border-radius: 14px;
+  border: 2px solid #535353;
+}
