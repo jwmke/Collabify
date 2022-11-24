@@ -37,13 +37,14 @@ export default function Home() {
         )
     }
 
-    const findCollabs = () => {
+    const findCollabs = (ids: string[], mode: string) => {
         setLoadingMessage("Finding All Collabs...");
         setLoading(true);
         ws.current?.send(JSON.stringify(
             {
                 "token": localStorage.getItem("accessToken"),
-                "artists": artistIds
+                "artists": ids,
+                "mode": mode
             }
         ));
     }
