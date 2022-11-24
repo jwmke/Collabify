@@ -44,21 +44,38 @@ type AlbumResp struct {
 func getCollabs(request collabReq, wsConn *Connection) {
 	token := request.Token
 	artistIds := request.Artists
+	selectedArtistIds := request.Selected
+	followCollabBool := request.Mode == "follow"
 	artistIdMap := make(map[ID]bool)
-	for _, id := range artistIds {
-		artistIdMap[id] = true
+	if followCollabBool {
+		for _, id := range artistIds {
+			artistIdMap[id] = true
+		}
 	}
 
 	var wg sync.WaitGroup
-	wg.Add(len(artistIds))
-	for _, id := range artistIds {
-		go artistCollabs(&wg, id, artistIdMap, token, wsConn)
+	wg.Add(len(selectedArtistIds))
+	for _, id := range selectedArtistIds {
+		if followCollabBool {
+			go followCollabs(&wg, id, artistIdMap, token, wsConn)
+		} else {
+			go artistCollabs(&wg, id, token, wsConn)
+		}
 	}
 
 	wg.Wait()
 }
 
-func artistCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token string, wsConn *Connection) {
+func artistCollabs(wg *sync.WaitGroup, artistId ID, token string, wsConn *Connection) {
+	defer wg.Done()
+	// find all tracks artist appears on and return via websocket (perhaps mark whether follow/all in resp)
+	// TODO: call https://api.spotify.com/v1/artists/{id}/albums w/ include group set to appears_on (limit is 50 results, call multiple times)
+	//  - https://developer.spotify.com/console/get-artist-albums/
+	//  - Only keep albumIDS where "album_type": "album"
+	//   - For said album ids, retrieve all tracks and return ones artists appears on
+}
+
+func followCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token string, wsConn *Connection) {
 	defer wg.Done()
 	client := &http.Client{}
 	albumUrl := fmt.Sprintf("https://api.spotify.com/v1/artists/%s/albums?include_groups=single%%2Calbum&market=US&limit=50", artistId)

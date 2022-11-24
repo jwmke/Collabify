@@ -12,8 +12,10 @@ import (
 )
 
 type collabReq struct {
-	Token   string `json:"token"`
-	Artists []ID   `json:"artists"`
+	Token    string `json:"token"`
+	Artists  []ID   `json:"artists"`
+	Selected []ID   `json:"selected"`
+	Mode     string `json:"mode"`
 }
 
 type Connection struct {
