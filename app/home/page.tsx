@@ -40,7 +40,7 @@ export default function Home() {
     const findCollabs = (ids: string[], mode: string) => {
         setLoadingMessage("Finding All Collabs...");
         setLoading(true);
-        ws.current?.send(JSON.stringify( // TODO Determine whether want to find collabs b/n selected artists, or between all followed artists (& change UI wording accordingly)
+        ws.current?.send(JSON.stringify(
             {
                 "token": localStorage.getItem("accessToken"),
                 "selected": ids,

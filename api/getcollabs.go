@@ -37,8 +37,9 @@ type TrackResp struct {
 }
 
 type AlbumResp struct {
-	Id    ID    `json:"id"`
-	Image Image `json:"img"`
+	Id      ID             `json:"id"`
+	Image   Image          `json:"img"`
+	Artists []SimpleArtist `json:"artists"`
 }
 
 func getCollabs(request collabReq, wsConn *Connection) {
@@ -68,17 +69,37 @@ func getCollabs(request collabReq, wsConn *Connection) {
 
 func artistCollabs(wg *sync.WaitGroup, artistId ID, token string, wsConn *Connection) {
 	defer wg.Done()
-	// find all tracks artist appears on and return via websocket (perhaps mark whether follow/all in resp)
-	// TODO: call https://api.spotify.com/v1/artists/{id}/albums w/ include group set to appears_on (limit is 50 results, call multiple times)
-	//  - https://developer.spotify.com/console/get-artist-albums/
-	//  - Only keep albumIDS where "album_type": "album"
-	//   - For said album ids, retrieve all tracks and return ones artists appears on
+
+	client := &http.Client{}
+	albumIds := getAlbums(client, artistId, token, "all")
+
+	var tracksWg sync.WaitGroup
+	tracksWg.Add(len(albumIds))
+	for _, albumResp := range albumIds {
+		go getCollabsFromAlbums(&tracksWg, albumResp, artistId, nil, token, wsConn, client)
+	}
+	tracksWg.Wait()
 }
 
 func followCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token string, wsConn *Connection) {
 	defer wg.Done()
 	client := &http.Client{}
-	albumUrl := fmt.Sprintf("https://api.spotify.com/v1/artists/%s/albums?include_groups=single%%2Calbum&market=US&limit=50", artistId)
+	albumIds := getAlbums(client, artistId, token, "follow")
+
+	var tracksWg sync.WaitGroup
+	tracksWg.Add(len(albumIds))
+	for _, albumResp := range albumIds {
+		go getCollabsFromAlbums(&tracksWg, albumResp, artistId, idMap, token, wsConn, client)
+	}
+	tracksWg.Wait()
+}
+
+func getAlbums(client *http.Client, artistId ID, token string, mode string) []AlbumResp {
+	include := ""
+	if mode == "all" {
+		include = "&include_groups=appears_on"
+	}
+	albumUrl := fmt.Sprintf("https://api.spotify.com/v1/artists/%s/albums?include_groups=single%%2Calbum&market=US&limit=50%s", artistId, include)
 	continueFlag := true
 	var albumIds []AlbumResp
 	for continueFlag {
@@ -91,13 +112,13 @@ func followCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 		res, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
-			return
+			return nil
 		}
 		if res.StatusCode == 429 {
 			retry, err := strconv.Atoi(res.Header.Get("Retry-After"))
 			if err != nil {
 				fmt.Println(err)
-				return
+				return nil
 			}
 			res.Body.Close()
 			time.Sleep(time.Duration(retry+2) * time.Second)
@@ -110,6 +131,7 @@ func followCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 				var albumResp AlbumResp
 				albumResp.Id = album.ID
 				albumResp.Image = album.Images[1]
+				albumResp.Artists = album.Artists
 				albumIds = append(albumIds, albumResp)
 			}
 
@@ -121,21 +143,14 @@ func followCollabs(wg *sync.WaitGroup, artistId ID, idMap map[ID]bool, token str
 		} else {
 			fmt.Printf("Status code expected: 200\nStatus code received: %v\n", res.StatusCode)
 			res.Body.Close()
-			return
+			return nil
 		}
 	}
-
-	var tracksWg sync.WaitGroup
-	tracksWg.Add(len(albumIds))
-	for _, albumResp := range albumIds {
-		go getCollabsFromAlbums(&tracksWg, albumResp, artistId, idMap, token, wsConn, client)
-	}
-	tracksWg.Wait()
+	return albumIds
 }
 
 func getCollabsFromAlbums(tracksWg *sync.WaitGroup, album AlbumResp, artistId ID, idMap map[ID]bool, token string, wsConn *Connection, client *http.Client) {
 	defer tracksWg.Done()
-
 	for {
 		tracksUrl := fmt.Sprintf("https://api.spotify.com/v1/albums/%s/tracks?market=US&limit=50", album.Id)
 		req, _ := http.NewRequest("GET", tracksUrl, nil)
@@ -155,19 +170,24 @@ func getCollabsFromAlbums(tracksWg *sync.WaitGroup, album AlbumResp, artistId ID
 			res.Body.Close()
 
 			for _, track := range tracksReq.Items {
-				trackArtists := track.Artists[1:]
-
-				for _, trackArtist := range trackArtists {
-					if _, check := idMap[trackArtist.ID]; check {
-						if trackArtist.ID != artistId {
-							var returnTrack TrackResp
-							returnTrack.Id = track.ID
-							returnTrack.Artists = track.Artists
-							returnTrack.Name = track.Name
-							returnTrack.Image = album.Image
-							err := wsConn.Send(returnTrack)
-							if err != nil {
-								fmt.Printf("Error sending message: %v\n", err.Error())
+				if idMap == nil {
+					var trackArtists []SimpleArtist
+					if album.Artists[0].Name == "Various Artists" {
+						trackArtists = track.Artists
+					} else {
+						trackArtists = track.Artists[1:]
+					}
+					for _, trackArtist := range trackArtists {
+						if trackArtist.ID == artistId {
+							sendCollabResp(track, album, wsConn)
+						}
+					}
+				} else {
+					trackArtists := track.Artists[1:]
+					for _, trackArtist := range trackArtists {
+						if _, check := idMap[trackArtist.ID]; check {
+							if trackArtist.ID != artistId {
+								sendCollabResp(track, album, wsConn)
 							}
 						}
 					}
@@ -187,5 +207,17 @@ func getCollabsFromAlbums(tracksWg *sync.WaitGroup, album AlbumResp, artistId ID
 			res.Body.Close()
 			return
 		}
+	}
+}
+
+func sendCollabResp(track SimpleTrack, album AlbumResp, wsConn *Connection) {
+	var returnTrack TrackResp
+	returnTrack.Id = track.ID
+	returnTrack.Artists = track.Artists
+	returnTrack.Name = track.Name
+	returnTrack.Image = album.Image
+	err := wsConn.Send(returnTrack)
+	if err != nil {
+		fmt.Printf("Error sending message: %v\n", err.Error())
 	}
 }
