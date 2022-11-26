@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: false,
   swcMinify: true,
-  experimental: { appDir: true },
+  experimental: { appDir: true, esmExternals: 'loose' },
   images: {
     remotePatterns: [
       {

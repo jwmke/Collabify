@@ -42,15 +42,15 @@ export default function Following({ following, findCollabs }: { following: Spoti
         </div>
         <div className="mx-auto w-1/2 flex justify-center">
             <span className="w-80 mt-5 mx-5 inline-block">
-                <Button onClick={() => findCollabs(selectedIds, "follow")} size="lg" tooltip="All collabs between selected artists and your other followed artists.">
-                    Find Follow Collabs
+                <Button onClick={() => findCollabs(selectedIds, "follow")} size="lg">
+                    Find Collabs
                 </Button>
             </span>
-            <span className="w-80 mt-5 mx-5 inline-block">
+            {/* <span className="w-80 mt-5 mx-5 inline-block">
                 <Button onClick={() => findCollabs(selectedIds, "all")} size="lg" tooltip="All tracks that selected artists appear on.">
                     Find All Collabs
                 </Button>
-            </span>
+            </span> */}
         </div>
     </div>;
 }

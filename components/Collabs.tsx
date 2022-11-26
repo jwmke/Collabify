@@ -1,9 +1,10 @@
 import Image from "next/image";
 import { Collab } from '../custom-types';
 import Button from "./Button";
+import { ForceGraph3D } from 'react-force-graph';
+import * as THREE from 'three';
 
 export default function Collabs({ collabTracks }:{ collabTracks:Collab[] }) {
-    
     const savePlayList = () => {
         // Endpoints
         // GET https://api.spotify.com/v1/me (user_id = resp.id)
@@ -17,20 +18,47 @@ export default function Collabs({ collabTracks }:{ collabTracks:Collab[] }) {
         // body = {"uris": ["spotify:track:4iV5W9uYEdYUVa79Axb7Rh","spotify:track:1301WleyT98MSxVHPZCA6M"]} // Max 100 items
     }
     
-    return <div className="h-screen bg-dark-gray font-lato">
-        <div className="text-white font-bold text-4xl">Collabs</div>
-        <div className="w-2/3 mx-auto grid grid-cols-7 gap-4 mt-5 h-2/3 overflow-y-scroll">
-            {collabTracks.map((track:Collab)=>{
-                return <div key={track.id}>
-                    <Image src={track.img.url} alt={track.name} width={160} height={160}/>
-                    <div className="text-white font-bold">{track.name}</div>
-                    <div className="text-white font-bold">{track.artists[0].name}</div>
-                    <br/>
-                </div>;
-            })}
-        </div>
-        <div className="mx-auto w-80 mt-8">
-            <Button onClick={() => savePlayList()} size="lg">Save To Playlist</Button>
-        </div>
-    </div>;
+    // return <div className="h-screen bg-dark-gray font-lato">
+    //     <div className="text-white font-bold text-4xl">Collabs</div>
+    //     <div className="w-2/3 mx-auto grid grid-cols-7 gap-4 mt-5 h-2/3 overflow-y-scroll">
+    //         {collabTracks.map((track:Collab)=>{
+    //             return <div key={track.id}>
+    //                 <Image src={track.img.url} alt={track.name} width={160} height={160}/>
+    //                 <div className="text-white font-bold">{track.name}</div>
+    //                 <div className="text-white font-bold">{track.artists[0].name}</div>
+    //                 <br/>
+    //             </div>;
+    //         })}
+    //     </div>
+    //     <div className="mx-auto w-80 mt-8">
+    //         <Button onClick={() => savePlayList()} size="lg">Save To Playlist</Button>
+    //     </div>
+    // </div>;
+
+    const imgs = collabTracks.map((track:Collab)=>{
+        return track.img.url;
+    });
+
+    // Random connected graph
+    const gData = {
+      nodes: imgs.map((img, id) => ({ id, img })),
+      links: [...Array(imgs.length).keys() as any]
+        .filter(id => id)
+          .map(id => ({
+            source: id,
+            target: Math.round(Math.random() * (id-1))
+          }))
+    };
+
+    return <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
+        nodeThreeObject={({ img }:any) => {
+                const imgTexture = new THREE.TextureLoader().load(img);
+                const material = new THREE.SpriteMaterial({ map: imgTexture });
+                const sprite = new THREE.Sprite(material);
+                sprite.scale.set(12, 12, 1);
+
+                return sprite;
+            }
+        }
+    />
 }
