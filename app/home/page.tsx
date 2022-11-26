@@ -40,6 +40,14 @@ export default function Home() {
     const findCollabs = (ids: string[], mode: string) => {
         setLoadingMessage("Finding All Collabs...");
         setLoading(true);
+
+        setTimeout(()=> { // TODO: Remove later (for testing)
+            setLoading(false);
+        }, 2000);
+        setCollabTracks(
+            [""] as any
+        );
+
         ws.current?.send(JSON.stringify(
             {
                 "token": localStorage.getItem("accessToken"),
@@ -103,6 +111,6 @@ export default function Home() {
     if (isLoading || !artists) return <Loading>{loadingMessage}</Loading>;
 
     return <div>
-        {finalCollabs.length > 0 ? <Collabs collabTracks={finalCollabs}/> : <Following following={artists} findCollabs={findCollabs}/> }
+        {finalCollabs.length > 0 ? <Collabs collabTracks={finalCollabs} artists={artists}/> : <Following following={artists} findCollabs={findCollabs}/> }
     </div>;
 }

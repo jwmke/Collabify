@@ -4,7 +4,7 @@ import Button from "./Button";
 import { ForceGraph3D } from 'react-force-graph';
 import * as THREE from 'three';
 
-export default function Collabs({ collabTracks }:{ collabTracks:Collab[] }) {
+export default function Collabs({ collabTracks, artists }:{ collabTracks:Collab[], artists:SpotifyApi.ArtistObjectFull[] }) {
     const savePlayList = () => {
         // Endpoints
         // GET https://api.spotify.com/v1/me (user_id = resp.id)
@@ -35,19 +35,45 @@ export default function Collabs({ collabTracks }:{ collabTracks:Collab[] }) {
     //     </div>
     // </div>;
 
-    const imgs = collabTracks.map((track:Collab)=>{
-        return track.img.url;
+    const imgs = artists.map((artist:SpotifyApi.ArtistObjectFull) => {
+        return artist.images[2].url;
     });
 
-    // Random connected graph
+    const artistIdMap: { [artist: string]: number } = {};
+    artists.forEach((artist:SpotifyApi.ArtistObjectFull, idx: number) => {
+        artistIdMap[artist.id] = idx;
+    });
+
+    const artistIds = artists.map((artist:SpotifyApi.ArtistObjectFull) => (artist.id));
+
+    const nodes = imgs.map((img, id) => ({ id, img }));
+
+    let connections: Set<string>[] = [];
+    let links: {
+        source: any;
+        target: number;
+    }[] = [];
+
+    collabTracks.forEach((track:Collab)=>{
+        const srcArtistId = track.artists[0].id;
+        track.artists.slice(1).forEach((artist:SpotifyApi.ArtistObjectSimplified) => {
+            const tarArtistId = artist.id;
+            if (artistIds.includes(artist.id)) {
+                const connectionSet = new Set([srcArtistId, tarArtistId].sort());
+                if (connections.includes(connectionSet)) {
+                    links.push({
+                        source: artistIdMap[srcArtistId],
+                        target: artistIdMap[tarArtistId]
+                    })
+                    connections.push(connectionSet);
+                }
+            }
+        });
+    });
+
     const gData = {
-      nodes: imgs.map((img, id) => ({ id, img })),
-      links: [...Array(imgs.length).keys() as any]
-        .filter(id => id)
-          .map(id => ({
-            source: id,
-            target: Math.round(Math.random() * (id-1))
-          }))
+        nodes: nodes,
+        links: links
     };
 
     return <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
