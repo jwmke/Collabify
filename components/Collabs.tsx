@@ -48,28 +48,35 @@ export default function Collabs({ collabTracks, artists }:{ collabTracks:Collab[
 
     const nodes = imgs.map((img, id) => ({ id, img }));
 
-    let connections: Set<string>[] = [];
+    let linkSizes = new Map<string[], number>();
     let links: {
-        source: any;
+        source: number;
         target: number;
+        size: number;
     }[] = [];
+    let maxSize: number = -1;
 
     collabTracks.forEach((track:Collab)=>{
         const srcArtistId = track.artists[0].id;
         track.artists.slice(1).forEach((artist:SpotifyApi.ArtistObjectSimplified) => {
             const tarArtistId = artist.id;
             if (artistIds.includes(artist.id)) {
-                const connectionSet = new Set([srcArtistId, tarArtistId].sort());
-                if (connections.includes(connectionSet)) {
-                    links.push({
-                        source: artistIdMap[srcArtistId],
-                        target: artistIdMap[tarArtistId]
-                    })
-                    connections.push(connectionSet);
-                }
+                const connection = [srcArtistId, tarArtistId].sort();
+                let linkSize = linkSizes.get(connection);
+                linkSize = linkSize === undefined ? 1 : linkSize + 1;
+                linkSizes.set(connection, linkSize);
+                maxSize = linkSize > maxSize ? linkSize : maxSize;
             }
         });
     });
+
+    for (const [key, value] of Object.entries(linkSizes)) {
+        links.push({
+            source: artistIdMap[key[0]],
+            target: artistIdMap[key[1]],
+            size: value
+        })
+    }
 
     const gData = {
         nodes: nodes,
@@ -77,6 +84,7 @@ export default function Collabs({ collabTracks, artists }:{ collabTracks:Collab[
     };
 
     return <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
+        linkWidth={(link) => (maxSize) - ((link as any).size * 0.5)}
         nodeThreeObject={({ img }:any) => {
                 const imgTexture = new THREE.TextureLoader().load(img);
                 const material = new THREE.SpriteMaterial({ map: imgTexture });

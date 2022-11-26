@@ -41,13 +41,6 @@ export default function Home() {
         setLoadingMessage("Finding All Collabs...");
         setLoading(true);
 
-        setTimeout(()=> { // TODO: Remove later (for testing)
-            setLoading(false);
-        }, 2000);
-        setCollabTracks(
-            [""] as any
-        );
-
         ws.current?.send(JSON.stringify(
             {
                 "token": localStorage.getItem("accessToken"),
