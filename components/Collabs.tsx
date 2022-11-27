@@ -4,6 +4,12 @@ import Button from "./Button";
 import { ForceGraph3D } from 'react-force-graph';
 import * as THREE from 'three';
 
+interface Link {
+    source: number;
+    target: number;
+    size: number;
+}
+
 export default function Collabs({ collabTracks, artists }:{ collabTracks:Collab[], artists:SpotifyApi.ArtistObjectFull[] }) {
     const savePlayList = () => {
         // Endpoints
@@ -48,20 +54,16 @@ export default function Collabs({ collabTracks, artists }:{ collabTracks:Collab[
 
     const nodes = imgs.map((img, id) => ({ id, img }));
 
-    let linkSizes = new Map<string[], number>();
-    let links: {
-        source: number;
-        target: number;
-        size: number;
-    }[] = [];
+    let linkSizes = new Map<string, number>();
+    let links: Link[] = [];
     let maxSize: number = -1;
 
     collabTracks.forEach((track:Collab)=>{
         const srcArtistId = track.artists[0].id;
         track.artists.slice(1).forEach((artist:SpotifyApi.ArtistObjectSimplified) => {
             const tarArtistId = artist.id;
-            if (artistIds.includes(artist.id)) {
-                const connection = [srcArtistId, tarArtistId].sort();
+            if (artistIds.includes(tarArtistId) && artistIds.includes(srcArtistId)) {
+                const connection = JSON.stringify([srcArtistId, tarArtistId].sort());
                 let linkSize = linkSizes.get(connection);
                 linkSize = linkSize === undefined ? 1 : linkSize + 1;
                 linkSizes.set(connection, linkSize);
@@ -70,13 +72,14 @@ export default function Collabs({ collabTracks, artists }:{ collabTracks:Collab[
         });
     });
 
-    for (const [key, value] of Object.entries(linkSizes)) {
+    linkSizes.forEach((value, key)=> {
+        const keyArray = JSON.parse(key);
         links.push({
-            source: artistIdMap[key[0]],
-            target: artistIdMap[key[1]],
+            source: artistIdMap[keyArray[0]],
+            target: artistIdMap[keyArray[1]],
             size: value
-        })
-    }
+        });
+    });
 
     const gData = {
         nodes: nodes,
@@ -84,7 +87,7 @@ export default function Collabs({ collabTracks, artists }:{ collabTracks:Collab[
     };
 
     return <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
-        linkWidth={(link) => (maxSize) - ((link as any).size * 0.5)}
+        linkWidth={(link:any) => (link.size * 0.5)}
         nodeThreeObject={({ img }:any) => {
                 const imgTexture = new THREE.TextureLoader().load(img);
                 const material = new THREE.SpriteMaterial({ map: imgTexture });
