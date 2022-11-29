@@ -4,3 +4,8 @@ export interface Collab {
     name: string,
     img: SpotifyApi.ImageObject
 }
+
+export interface ArtistNode {
+    id: number,
+    img: string
+}

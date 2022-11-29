@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import Following from '../../components/Following';
 import Collabs from '../../components/Collabs';
 import Loading from '../../components/Loading';
-import { Collab } from '../../custom-types';
+import { ArtistNode, Collab } from '../../custom-types';
 
 const ORIGINAL_URL = "https://api.spotify.com/v1/me/following?type=artist&limit=50";
 
@@ -15,6 +15,7 @@ export default function Home() {
     const [collabTracks, setCollabTracks] = useState([] as Collab[]);
     const [finalCollabs, setFinalCollabs] = useState([] as Collab[]);
     const [artistIds, setArtistIds] = useState([] as string[]);
+    const [nodes, setNodes] = useState([] as ArtistNode[]);
     const ws = useRef(null as WebSocket | null);
     
     const fetchArtists = () => {
@@ -99,11 +100,17 @@ export default function Home() {
                 return artist.id;
             })
         )
+        const imgs = artists.map((artist:SpotifyApi.ArtistObjectFull) => {
+            console.log("A")
+            return artist.images[2].url;
+        });
+
+        setNodes(imgs.map((img, id) => ({ id, img })));
     }, [artists]);
 
     if (isLoading || !artists) return <Loading>{loadingMessage}</Loading>;
 
     return <div>
-        {finalCollabs.length > 0 ? <Collabs collabTracks={finalCollabs} artists={artists}/> : <Following following={artists} findCollabs={findCollabs}/> }
+        {finalCollabs.length > 0 ? <Collabs collabTracks={finalCollabs} artists={artists} nodes={nodes}/> : <Following following={artists} findCollabs={findCollabs}/> }
     </div>;
 }

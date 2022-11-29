@@ -1,8 +1,9 @@
 import Image from "next/image";
-import { Collab } from '../custom-types';
+import { ArtistNode, Collab } from '../custom-types';
 import Button from "./Button";
 import { ForceGraph3D } from 'react-force-graph';
 import * as THREE from 'three';
+import { useEffect, useRef } from "react";
 
 interface Link {
     source: number;
@@ -10,7 +11,7 @@ interface Link {
     size: number;
 }
 
-export default function Collabs({ collabTracks, artists }:{ collabTracks:Collab[], artists:SpotifyApi.ArtistObjectFull[] }) {
+export default function Collabs({ collabTracks, artists, nodes }:{ collabTracks:Collab[], artists:SpotifyApi.ArtistObjectFull[], nodes: ArtistNode[] }) {
     const savePlayList = () => {
         // Endpoints
         // GET https://api.spotify.com/v1/me (user_id = resp.id)
@@ -41,18 +42,12 @@ export default function Collabs({ collabTracks, artists }:{ collabTracks:Collab[
     //     </div>
     // </div>;
 
-    const imgs = artists.map((artist:SpotifyApi.ArtistObjectFull) => {
-        return artist.images[2].url;
-    });
-
     const artistIdMap: { [artist: string]: number } = {};
     artists.forEach((artist:SpotifyApi.ArtistObjectFull, idx: number) => {
         artistIdMap[artist.id] = idx;
     });
 
     const artistIds = artists.map((artist:SpotifyApi.ArtistObjectFull) => (artist.id));
-
-    const nodes = imgs.map((img, id) => ({ id, img }));
 
     let linkSizes = new Map<string, number>();
     let links: Link[] = [];
@@ -86,13 +81,25 @@ export default function Collabs({ collabTracks, artists }:{ collabTracks:Collab[
         links: links
     };
 
+    const forceRef = useRef(null as any);
+
+    useEffect(() => {
+        if (forceRef && forceRef.current) {
+            forceRef.current.d3Force("charge").strength(-10);
+            setTimeout(()=> {
+                forceRef.current.d3Force("charge").strength(-1);
+            }, 2500);
+        }
+    }, []);
+
     return <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
         linkWidth={(link:any) => (link.size * 0.5)}
+        ref={forceRef}
         nodeThreeObject={({ img }:any) => {
                 const imgTexture = new THREE.TextureLoader().load(img);
                 const material = new THREE.SpriteMaterial({ map: imgTexture });
                 const sprite = new THREE.Sprite(material);
-                sprite.scale.set(12, 12, 1);
+                sprite.scale.set(15, 15, 1);
 
                 return sprite;
             }
