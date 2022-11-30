@@ -3,7 +3,7 @@ import { ArtistNode, Collab } from '../custom-types';
 import Button from "./Button";
 import { ForceGraph3D } from 'react-force-graph';
 import * as THREE from 'three';
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Link {
     source: number;
@@ -42,6 +42,8 @@ export default function Collabs({ collabTracks, artists, nodes }:{ collabTracks:
     //     </div>
     // </div>;
 
+    const [highlightLink, setHighlightLink] = useState([] as number[]);
+
     const artistIdMap: { [artist: string]: number } = {};
     artists.forEach((artist:SpotifyApi.ArtistObjectFull, idx: number) => {
         artistIdMap[artist.id] = idx;
@@ -72,7 +74,7 @@ export default function Collabs({ collabTracks, artists, nodes }:{ collabTracks:
         links.push({
             source: artistIdMap[keyArray[0]],
             target: artistIdMap[keyArray[1]],
-            size: value
+            size: value,
         });
     });
 
@@ -93,8 +95,23 @@ export default function Collabs({ collabTracks, artists, nodes }:{ collabTracks:
     }, []);
 
     return <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
-        linkWidth={(link:any) => (link.size * 0.5)}
+        linkWidth={(link:any) => {
+            const currentLink = [link.source, link.target].sort();
+            return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? (link.size * 0.5) + 2 : (link.size * 0.5)}
+        }
+        linkColor={(link:any) => {
+                const currentLink = [link.source, link.target].sort();
+                return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? "#1db954" : "#b3b3b3"
+            }
+        }
+        onLinkHover={(link:any) => {
+            if (link) {
+                setHighlightLink([link.source.id, link.target.id].sort());
+            }
+        }}
+        linkHoverPrecision={6}
         ref={forceRef}
+        
         nodeThreeObject={({ img }:any) => {
                 const imgTexture = new THREE.TextureLoader().load(img);
                 const material = new THREE.SpriteMaterial({ map: imgTexture });

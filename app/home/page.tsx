@@ -101,7 +101,6 @@ export default function Home() {
             })
         )
         const imgs = artists.map((artist:SpotifyApi.ArtistObjectFull) => {
-            console.log("A")
             return artist.images[2].url;
         });
 
