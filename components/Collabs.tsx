@@ -4,14 +4,17 @@ import Button from "./Button";
 import { ForceGraph3D } from 'react-force-graph';
 import * as THREE from 'three';
 import { useEffect, useRef, useState } from "react";
+import React from "react";
+import Preview from "./Preview";
 
 interface Link {
     source: number;
     target: number;
     size: number;
+    collabs: Collab[] | undefined;
 }
 
-export default function Collabs({ collabTracks, artists, nodes }:{ collabTracks:Collab[], artists:SpotifyApi.ArtistObjectFull[], nodes: ArtistNode[] }) {
+const Collabs = ({ collabTracks, artists, nodes }:{ collabTracks:Collab[], artists:SpotifyApi.ArtistObjectFull[], nodes: ArtistNode[] }) => {
     const savePlayList = () => {
         // Endpoints
         // GET https://api.spotify.com/v1/me (user_id = resp.id)
@@ -43,6 +46,7 @@ export default function Collabs({ collabTracks, artists, nodes }:{ collabTracks:
     // </div>;
 
     const [highlightLink, setHighlightLink] = useState([] as number[]);
+    const [previewCollabs, setPreviewCollabs] = useState([] as Collab[]);
 
     const artistIdMap: { [artist: string]: number } = {};
     artists.forEach((artist:SpotifyApi.ArtistObjectFull, idx: number) => {
@@ -52,6 +56,7 @@ export default function Collabs({ collabTracks, artists, nodes }:{ collabTracks:
     const artistIds = artists.map((artist:SpotifyApi.ArtistObjectFull) => (artist.id));
 
     let linkSizes = new Map<string, number>();
+    let linkCollabs = new Map<string, Collab[]>();
     let links: Link[] = [];
     let maxSize: number = -1;
 
@@ -62,6 +67,13 @@ export default function Collabs({ collabTracks, artists, nodes }:{ collabTracks:
             if (artistIds.includes(tarArtistId) && artistIds.includes(srcArtistId)) {
                 const connection = JSON.stringify([srcArtistId, tarArtistId].sort());
                 let linkSize = linkSizes.get(connection);
+                let collabs = linkCollabs.get(connection);
+                if (collabs === undefined) {
+                    linkCollabs.set(connection, [track]);
+                } else {
+                    collabs.push(track);
+                    linkCollabs.set(connection, collabs);
+                }
                 linkSize = linkSize === undefined ? 1 : linkSize + 1;
                 linkSizes.set(connection, linkSize);
                 maxSize = linkSize > maxSize ? linkSize : maxSize;
@@ -75,6 +87,7 @@ export default function Collabs({ collabTracks, artists, nodes }:{ collabTracks:
             source: artistIdMap[keyArray[0]],
             target: artistIdMap[keyArray[1]],
             size: value,
+            collabs: linkCollabs.get(key)
         });
     });
 
@@ -94,32 +107,38 @@ export default function Collabs({ collabTracks, artists, nodes }:{ collabTracks:
         }
     }, []);
 
-    return <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
-        linkWidth={(link:any) => {
-            const currentLink = [link.source, link.target].sort();
-            return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? (link.size * 0.5) + 2 : (link.size * 0.5)}
-        }
-        linkColor={(link:any) => {
+    return <div>
+        <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
+            linkWidth={(link:any) => {
                 const currentLink = [link.source, link.target].sort();
-                return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? "#1db954" : "#b3b3b3"
+                return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? (link.size * 0.5) + 2 : (link.size * 0.5)}
             }
-        }
-        onLinkHover={(link:any) => {
-            if (link) {
-                setHighlightLink([link.source.id, link.target.id].sort());
+            linkColor={(link:any) => {
+                    const currentLink = [link.source, link.target].sort();
+                    return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? "#1db954" : "#b3b3b3"
+                }
             }
-        }}
-        linkHoverPrecision={6}
-        ref={forceRef}
-        
-        nodeThreeObject={({ img }:any) => {
-                const imgTexture = new THREE.TextureLoader().load(img);
-                const material = new THREE.SpriteMaterial({ map: imgTexture });
-                const sprite = new THREE.Sprite(material);
-                sprite.scale.set(15, 15, 1);
+            onLinkHover={(link:any) => {
+                if (link) {
+                    setHighlightLink([link.source.id, link.target.id].sort());
+                    setPreviewCollabs(link.collabs);
+                }
+            }}
+            linkHoverPrecision={6}
+            ref={forceRef}
+            linkOpacity={0.5}
+            nodeThreeObject={({ img }:any) => {
+                    const imgTexture = new THREE.TextureLoader().load(img);
+                    const material = new THREE.SpriteMaterial({ map: imgTexture });
+                    const sprite = new THREE.Sprite(material);
+                    sprite.scale.set(15, 15, 1);
 
-                return sprite;
-            }
+                    return sprite;
+                }
         }
-    />
+        />
+        {previewCollabs ? <Preview tracks={previewCollabs}/> : null}
+    </div>
 }
+
+export default React.memo(Collabs);
