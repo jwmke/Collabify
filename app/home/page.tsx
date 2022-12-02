@@ -77,6 +77,13 @@ export default function Home() {
             wsCurrent.close();
         };
     }, []);
+
+    const artistIdMap: { [artist: string]: number } = {};
+    artists.forEach((artist:SpotifyApi.ArtistObjectFull, idx: number) => {
+        artistIdMap[artist.id] = idx;
+    });
+
+    const artistIdSet = new Set(artists.map((artist:SpotifyApi.ArtistObjectFull) => (artist.id)));
     
     useEffect(()=> {
         const uniqueNames = new Set();
@@ -110,6 +117,6 @@ export default function Home() {
     if (isLoading || !artists) return <Loading>{loadingMessage}</Loading>;
 
     return <div>
-        {finalCollabs.length > 0 ? <Collabs collabTracks={finalCollabs} artists={artists} nodes={nodes}/> : <Following following={artists} findCollabs={findCollabs}/> }
+        {finalCollabs.length > 0 ? <Collabs collabTracks={finalCollabs} artistIdSet={artistIdSet} artistIdMap={artistIdMap} nodes={nodes}/> : <Following following={artists} findCollabs={findCollabs}/> }
     </div>;
 }

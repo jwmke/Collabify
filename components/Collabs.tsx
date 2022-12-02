@@ -14,7 +14,7 @@ interface Link {
     collabs: Collab[] | undefined;
 }
 
-const Collabs = ({ collabTracks, artists, nodes }:{ collabTracks:Collab[], artists:SpotifyApi.ArtistObjectFull[], nodes: ArtistNode[] }) => {
+const Collabs = ({ collabTracks, artistIdSet, artistIdMap, nodes }:{ collabTracks:Collab[], artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, nodes: ArtistNode[] }) => {
     const savePlayList = () => {
         // Endpoints
         // GET https://api.spotify.com/v1/me (user_id = resp.id)
@@ -48,23 +48,18 @@ const Collabs = ({ collabTracks, artists, nodes }:{ collabTracks:Collab[], artis
     const [highlightLink, setHighlightLink] = useState([] as number[]);
     const [previewCollabs, setPreviewCollabs] = useState([] as Collab[]);
 
-    const artistIdMap: { [artist: string]: number } = {};
-    artists.forEach((artist:SpotifyApi.ArtistObjectFull, idx: number) => {
-        artistIdMap[artist.id] = idx;
-    });
-
-    const artistIds = artists.map((artist:SpotifyApi.ArtistObjectFull) => (artist.id));
-
     let linkSizes = new Map<string, number>();
     let linkCollabs = new Map<string, Collab[]>();
     let links: Link[] = [];
     let maxSize: number = -1;
 
+    // TODO: USE forwardRef and useRef to optimize updating so whole loop isn't ran on each new collab
+    // Ex.: https://stackoverflow.com/questions/55889357/change-react-hook-state-from-parent-component
     collabTracks.forEach((track:Collab)=>{
         const srcArtistId = track.artists[0].id;
         track.artists.slice(1).forEach((artist:SpotifyApi.ArtistObjectSimplified) => {
             const tarArtistId = artist.id;
-            if (artistIds.includes(tarArtistId) && artistIds.includes(srcArtistId)) {
+            if (artistIdSet.has(tarArtistId) && artistIdSet.has(srcArtistId)) {
                 const connection = JSON.stringify([srcArtistId, tarArtistId].sort());
                 let linkSize = linkSizes.get(connection);
                 let collabs = linkCollabs.get(connection);
@@ -120,8 +115,12 @@ const Collabs = ({ collabTracks, artists, nodes }:{ collabTracks:Collab[], artis
             }
             onLinkHover={(link:any) => {
                 if (link) {
-                    setHighlightLink([link.source.id, link.target.id].sort());
-                    setPreviewCollabs(link.collabs);
+                    const newLink = [link.source.id, link.target.id].sort();
+                    if (JSON.stringify(newLink) !== JSON.stringify(highlightLink)) {
+                        setHighlightLink(newLink);
+                        console.log(link.collabs);
+                        setPreviewCollabs(link.collabs);
+                    }
                 }
             }}
             linkHoverPrecision={6}
