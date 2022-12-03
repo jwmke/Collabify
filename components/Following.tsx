@@ -8,7 +8,7 @@ export default function Following({ following, findCollabs }: { following: Spoti
     const [selectedIds, setSelectedIds] = useState(artistIds as string[]);
 
     return <div className="h-screen bg-dark-gray font-lato">
-        <Header />
+        <Header headerType="Log Out"/>
         <h1 className="text-white font-bold text-4xl text-center -mt-6">Followed Artists</h1>
         <p className="text-white text-center mt-1 text-sm">
             Select one or more artists to find their collabs.<br />
