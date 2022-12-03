@@ -4,7 +4,7 @@ import Button from "./Button";
 import { ForceGraph3D } from 'react-force-graph';
 import * as THREE from 'three';
 import { useEffect, useRef, useState } from "react";
-import React from "react";
+import React, { forwardRef, useImperativeHandle } from "react";
 import Preview from "./Preview";
 
 interface Link {
@@ -14,7 +14,8 @@ interface Link {
     collabs: Collab[] | undefined;
 }
 
-const Collabs = ({ collabTracks, artistIdSet, artistIdMap, nodes }:{ collabTracks:Collab[], artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, nodes: ArtistNode[] }) => {
+const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes }:
+    { artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, nodes: ArtistNode[] }, ref) => {
     const savePlayList = () => {
         // Endpoints
         // GET https://api.spotify.com/v1/me (user_id = resp.id)
@@ -27,63 +28,51 @@ const Collabs = ({ collabTracks, artistIdSet, artistIdMap, nodes }:{ collabTrack
         // https://api.spotify.com/v1/playlists/{playlist_id}/tracks
         // body = {"uris": ["spotify:track:4iV5W9uYEdYUVa79Axb7Rh","spotify:track:1301WleyT98MSxVHPZCA6M"]} // Max 100 items
     }
-    
-    // return <div className="h-screen bg-dark-gray font-lato">
-    //     <div className="text-white font-bold text-4xl">Collabs</div>
-    //     <div className="w-2/3 mx-auto grid grid-cols-7 gap-4 mt-5 h-2/3 overflow-y-scroll">
-    //         {collabTracks.map((track:Collab)=>{
-    //             return <div key={track.id}>
-    //                 <Image src={track.img.url} alt={track.name} width={160} height={160}/>
-    //                 <div className="text-white font-bold">{track.name}</div>
-    //                 <div className="text-white font-bold">{track.artists[0].name}</div>
-    //                 <br/>
-    //             </div>;
-    //         })}
-    //     </div>
-    //     <div className="mx-auto w-80 mt-8">
-    //         <Button onClick={() => savePlayList()} size="lg">Save To Playlist</Button>
-    //     </div>
-    // </div>;
 
     const [highlightLink, setHighlightLink] = useState([] as number[]);
     const [previewCollabs, setPreviewCollabs] = useState([] as Collab[]);
+    const linkRef = useRef({
+        linkCollabs: new Map<string, Collab[]>(),
+        maxSize: -1 as number
+    });
 
-    let linkSizes = new Map<string, number>();
-    let linkCollabs = new Map<string, Collab[]>();
-    let links: Link[] = [];
-    let maxSize: number = -1;
-
-    // TODO: USE forwardRef and useRef to optimize updating so whole loop isn't ran on each new collab
-    // Ex.: https://stackoverflow.com/questions/55889357/change-react-hook-state-from-parent-component
-    collabTracks.forEach((track:Collab)=>{
+    const addCollab = (track:Collab) => {
         const srcArtistId = track.artists[0].id;
         track.artists.slice(1).forEach((artist:SpotifyApi.ArtistObjectSimplified) => {
             const tarArtistId = artist.id;
             if (artistIdSet.has(tarArtistId) && artistIdSet.has(srcArtistId)) {
                 const connection = JSON.stringify([srcArtistId, tarArtistId].sort());
-                let linkSize = linkSizes.get(connection);
-                let collabs = linkCollabs.get(connection);
+                let collabs = linkRef.current.linkCollabs.get(connection);
+                const maxSize = linkRef.current.maxSize;
                 if (collabs === undefined) {
-                    linkCollabs.set(connection, [track]);
+                    linkRef.current.maxSize = 1 > maxSize ? 1 : maxSize;
+                    linkRef.current.linkCollabs.set(connection, [track]);
                 } else {
                     collabs.push(track);
-                    linkCollabs.set(connection, collabs);
+                    linkRef.current.maxSize = collabs.length > maxSize ? collabs.length : maxSize;
+                    linkRef.current.linkCollabs.set(connection, collabs);
                 }
-                linkSize = linkSize === undefined ? 1 : linkSize + 1;
-                linkSizes.set(connection, linkSize);
-                maxSize = linkSize > maxSize ? linkSize : maxSize;
+                
+                
             }
         });
-    });
+    };
 
-    linkSizes.forEach((value, key)=> {
+    let links = [] as Link[];
+    linkRef.current.linkCollabs.forEach((value, key)=> {
         const keyArray = JSON.parse(key);
         links.push({
             source: artistIdMap[keyArray[0]],
             target: artistIdMap[keyArray[1]],
-            size: value,
-            collabs: linkCollabs.get(key)
+            size: value.length,
+            collabs: linkRef.current.linkCollabs.get(key)
         });
+    });
+    
+    useImperativeHandle(ref, () => {
+        return {
+            addCollab: addCollab
+        };
     });
 
     const gData = {
@@ -92,7 +81,6 @@ const Collabs = ({ collabTracks, artistIdSet, artistIdMap, nodes }:{ collabTrack
     };
 
     const forceRef = useRef(null as any);
-
     useEffect(() => {
         if (forceRef && forceRef.current) {
             forceRef.current.d3Force("charge").strength(-10);
@@ -138,6 +126,6 @@ const Collabs = ({ collabTracks, artistIdSet, artistIdMap, nodes }:{ collabTrack
         />
         {previewCollabs ? <Preview tracks={previewCollabs}/> : null}
     </div>
-}
+});
 
 export default React.memo(Collabs);

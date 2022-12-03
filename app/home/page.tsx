@@ -17,6 +17,7 @@ export default function Home() {
     const [artistIds, setArtistIds] = useState([] as string[]);
     const [nodes, setNodes] = useState([] as ArtistNode[]);
     const ws = useRef(null as WebSocket | null);
+    const collabRef = useRef(null as any);
     
     const fetchArtists = () => {
         fetch(url, {
@@ -66,9 +67,10 @@ export default function Home() {
                 name: track.name,
                 img: track.img
             }
-            if (isLoading) {
+            if (isLoading) 
                 setLoading(false);
-            }
+            if (collabRef && collabRef.current)
+                collabRef.current.addCollab(collab);
             setCollabTracks(current => [collab, ...current]);
         };
 
@@ -117,6 +119,6 @@ export default function Home() {
     if (isLoading || !artists) return <Loading>{loadingMessage}</Loading>;
 
     return <div>
-        {finalCollabs.length > 0 ? <Collabs collabTracks={finalCollabs} artistIdSet={artistIdSet} artistIdMap={artistIdMap} nodes={nodes}/> : <Following following={artists} findCollabs={findCollabs}/> }
+        {finalCollabs.length > 0 ? <Collabs artistIdSet={artistIdSet} artistIdMap={artistIdMap} nodes={nodes} ref={collabRef}/> : <Following following={artists} findCollabs={findCollabs}/> }
     </div>;
 }

@@ -82,5 +82,5 @@ func main() {
 	methodsOk := handlers.AllowedMethods([]string{"POST", "OPTIONS"})
 	exposeHeaders := handlers.ExposedHeaders([]string{"Content-Length"})
 
-	log.Fatal(http.ListenAndServe(":8080", handlers.CORS(originsOk, headersOk, methodsOk, exposeHeaders)(router)))
+	log.Fatal(http.ListenAndServe("localhost:8080", handlers.CORS(originsOk, headersOk, methodsOk, exposeHeaders)(router)))
 }
