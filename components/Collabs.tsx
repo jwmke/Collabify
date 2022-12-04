@@ -25,6 +25,12 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap }:
         linkCollabs: new Map<string, Collab[]>(),
         maxSize: -1 as number
     });
+
+    const closeLinkModal = () => {
+        setHighlightLink([]);
+        setPreviewCollabs([]);
+        setArtistPics([]);
+    }
     
     const savePlayList = () => {
         const headers = {
@@ -129,12 +135,18 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap }:
             forceRef.current.d3Force("charge").strength(-10);
             setTimeout(()=> {
                 forceRef.current.d3Force("charge").strength(-1);
-            }, 2500);
+            }, 2000);
         }
     }, []);
 
     return <div>
-        <Header headerType="Back"/>
+        <div className='fixed z-10'>
+            <Header headerType="Collab"/>
+            {previewCollabs.length > 0 ? <Preview tracks={previewCollabs} artistPics={artistPics} closeModal={closeLinkModal}/> : null}
+            <div className='bottom-6 mx-auto'>
+                <Button onClick={() => savePlayList()} size="lg" tooltip="Create a new private playlist with all shown collabs.">Create Playlist</Button>
+            </div>
+        </div>
         <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
             linkWidth={(link:any) => {
                 const currentLink = [link.source, link.target].sort();
@@ -168,14 +180,6 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap }:
                 }
         }
         />
-        <div>
-            <div>
-                {previewCollabs ? <Preview tracks={previewCollabs} artistPics={artistPics}/> : null}
-            </div>
-            <div>
-                <Button onClick={() => savePlayList()} size="lg" tooltip="Create a new private playlist with all shown collabs.">Create Playlist</Button>
-            </div>
-        </div>
     </div>
 });
 
