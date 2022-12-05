@@ -14,7 +14,7 @@ export default function Following({ following, findCollabs }: { following: Spoti
             Select one or more artists to find their collabs.<br />
             To find all collabs, don't select any artists.
         </p>
-        <div className="w-1/2 mx-auto grid grid-cols-5 gap-8 mt-3 h-2/3 overflow-y-scroll">
+        <div className="w-1/2 mx-auto grid grid-cols-5 gap-8 mt-3 h-2/3 overflow-auto">
             {following.map((artist: SpotifyApi.ArtistObjectFull) => {
                 return <div key={artist.id}>
                     <div className={"hw160 overflow-hidden rounded-lg" + (selectedIds.includes(artist.id) ? " border-solid border-green border-2" : "")}>

@@ -36,6 +36,11 @@ a {
   width: 160px;
 }
 
+.hw100 {
+  height: 100px;
+  width: 100px;
+}
+
 * {
   scrollbar-width: thin;
   scrollbar-color: #292929 #535353;

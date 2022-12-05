@@ -99,9 +99,19 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap }:
                     linkRef.current.maxSize = 1 > maxSize ? 1 : maxSize;
                     linkRef.current.linkCollabs.set(connection, [track]);
                 } else {
-                    collabs.push(track);
-                    linkRef.current.maxSize = collabs.length > maxSize ? collabs.length : maxSize;
-                    linkRef.current.linkCollabs.set(connection, collabs);
+                    let trackNotInCollabs = true;
+                    collabs.every((collab) => {
+                        if (collab.id === track.id) {
+                            trackNotInCollabs = false;
+                            return false;
+                        }
+                        return true;
+                    });
+                    if (trackNotInCollabs) {
+                        collabs.push(track);
+                        linkRef.current.maxSize = collabs.length > maxSize ? collabs.length : maxSize;
+                        linkRef.current.linkCollabs.set(connection, collabs);
+                    }
                 }
             }
         });
