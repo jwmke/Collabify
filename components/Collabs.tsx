@@ -139,47 +139,51 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap }:
         }
     }, []);
 
-    return <div>
-        <div className='fixed z-10'>
+    return <div className='h-full w-full relative'>
+        <div className='absolute h-full w-full z-20'>
             <Header headerType="Collab"/>
-            {previewCollabs.length > 0 ? <Preview tracks={previewCollabs} artistPics={artistPics} closeModal={closeLinkModal}/> : null}
-            <div className='bottom-6 mx-auto'>
-                <Button onClick={() => savePlayList()} size="lg" tooltip="Create a new private playlist with all shown collabs.">Create Playlist</Button>
+            <div className='float-right relative -top-20 mr-5'>
+                {previewCollabs.length > 0 ? <Preview tracks={previewCollabs} artistPics={artistPics} closeModal={closeLinkModal}/> : null}
+            </div>
+            <div className='bottom-6 fixed lg-button-center'>
+                <Button onClick={() => savePlayList()} size="lg" tooltip="Create a new playlist with all shown collabs.">Create Playlist</Button>
             </div>
         </div>
-        <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
-            linkWidth={(link:any) => {
-                const currentLink = [link.source, link.target].sort();
-                return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? (link.size * 0.5) + 2 : (link.size * 0.5)}
-            }
-            linkColor={(link:any) => {
+        <div className='absolute z-10'>
+            <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
+                linkWidth={(link:any) => {
                     const currentLink = [link.source, link.target].sort();
-                    return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? "#1db954" : "#b3b3b3"
+                    return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? (link.size * 0.5) + 2 : (link.size * 0.5)}
                 }
-            }
-            onLinkHover={(link:any) => {
-                if (link) {
-                    const newLink = [link.source.id, link.target.id].sort();
-                    if (JSON.stringify(newLink) !== JSON.stringify(highlightLink)) {
-                        setHighlightLink(newLink);
-                        setArtistPics([artistPicMap[link.source.id], artistPicMap[link.target.id]]);
-                        setPreviewCollabs(link.collabs);
+                linkColor={(link:any) => {
+                        const currentLink = [link.source, link.target].sort();
+                        return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? "#1db954" : "#b3b3b3"
                     }
                 }
-            }}
-            linkHoverPrecision={6}
-            ref={forceRef}
-            linkOpacity={0.5}
-            nodeThreeObject={({ img }:any) => {
-                    const imgTexture = new THREE.TextureLoader().load(img);
-                    const material = new THREE.SpriteMaterial({ map: imgTexture });
-                    const sprite = new THREE.Sprite(material);
-                    sprite.scale.set(15, 15, 1);
+                onLinkHover={(link:any) => {
+                    if (link) {
+                        const newLink = [link.source.id, link.target.id].sort();
+                        if (JSON.stringify(newLink) !== JSON.stringify(highlightLink)) {
+                            setHighlightLink(newLink);
+                            setArtistPics([artistPicMap[link.source.id], artistPicMap[link.target.id]]);
+                            setPreviewCollabs(link.collabs);
+                        }
+                    }
+                }}
+                linkHoverPrecision={6}
+                ref={forceRef}
+                linkOpacity={0.5}
+                nodeThreeObject={({ img }:any) => {
+                        const imgTexture = new THREE.TextureLoader().load(img);
+                        const material = new THREE.SpriteMaterial({ map: imgTexture });
+                        const sprite = new THREE.Sprite(material);
+                        sprite.scale.set(15, 15, 1);
 
-                    return sprite;
-                }
-        }
-        />
+                        return sprite;
+                    }
+            }
+            />
+        </div>
     </div>
 });
 
