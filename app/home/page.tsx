@@ -16,6 +16,7 @@ export default function Home() {
     const [finalCollabs, setFinalCollabs] = useState([] as Collab[]);
     const [artistIds, setArtistIds] = useState([] as string[]);
     const [nodes, setNodes] = useState([] as ArtistNode[]);
+    const [collabsLoading, setCollabsLoading] = useState(true);
     const ws = useRef(null as WebSocket | null);
     const collabRef = useRef(null as any);
     
@@ -72,6 +73,7 @@ export default function Home() {
                 setLoading(false);
             if (track.id === "close") {
                 wsCurrent.close();
+                setCollabsLoading(false);
             } else {
                 if (collabRef && collabRef.current)
                     collabRef.current.addCollab(collab);
@@ -125,7 +127,8 @@ export default function Home() {
     if (isLoading || !artists) return <Loading>{loadingMessage}</Loading>;
 
     return <div>
-        {finalCollabs.length > 0 ? <Collabs artistIdSet={artistIdSet} artistIdMap={artistIdMap} nodes={nodes} ref={collabRef} artistPicMap={artistPicMap}/>
+        {finalCollabs.length > 0 ? <Collabs artistIdSet={artistIdSet} artistIdMap={artistIdMap} 
+        loading={collabsLoading} nodes={nodes} ref={collabRef} artistPicMap={artistPicMap}/>
          : <Following following={artists} findCollabs={findCollabs}/> }
     </div>;
 }

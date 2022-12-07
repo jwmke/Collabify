@@ -15,8 +15,8 @@ interface Link {
     collabs: Collab[] | undefined;
 }
 
-const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap }:
-    { artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, nodes: ArtistNode[], artistPicMap: { [artist: number]: string } }, ref) => {
+const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loading }:
+    { artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, nodes: ArtistNode[], artistPicMap: { [artist: number]: string }, loading:boolean }, ref) => {
     
     const [playlistMade, setPlaylistMade] = useState(false);
     const [highlightLink, setHighlightLink] = useState([] as number[]);
@@ -159,10 +159,10 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap }:
             <div className='bottom-6 fixed lg-button-center'>
                 <Button onClick={() => savePlayList()} size="lg" tooltip="Create a new playlist with all shown collabs.">Create Playlist</Button>
             </div>
-            <div className='bottom-4 right-4 w-18 fixed text-center'>
+            {loading && <div className='bottom-6 -right-2 w-18 fixed text-center'>
                 <Grid fill="#1DB954" height={"2.5em"}/>
-                <p className='text-white text-xs mt-2'>Loading...</p>
-            </div>
+                {/* <p className='text-white text-xs mt-2'>Loading...</p> */}
+            </div>}
         </div>
         <div className='absolute z-10'>
             <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
