@@ -58,6 +58,7 @@ export default function Home() {
         ws.current = new WebSocket("ws://localhost:8080/socket"); // Change before deployment
         ws.current.onopen = () => console.log("ws opened");
         ws.current.onclose = () => console.log("ws closed");
+        const wsCurrent = ws.current;
 
         ws.current.onmessage = e => {
             const track = JSON.parse(e.data);
@@ -69,12 +70,15 @@ export default function Home() {
             }
             if (isLoading) 
                 setLoading(false);
-            if (collabRef && collabRef.current)
-                collabRef.current.addCollab(collab);
-            setCollabTracks(current => [collab, ...current]);
+            if (track.id === "close") {
+                wsCurrent.close();
+            } else {
+                if (collabRef && collabRef.current)
+                    collabRef.current.addCollab(collab);
+                setCollabTracks(current => [collab, ...current]);
+            }            
         };
 
-        const wsCurrent = ws.current;
         return () => {
             wsCurrent.close();
         };

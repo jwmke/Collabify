@@ -4,6 +4,7 @@ import { ForceGraph3D } from 'react-force-graph';
 import * as THREE from 'three';
 import { useEffect, useRef, useState } from "react";
 import React, { forwardRef, useImperativeHandle } from "react";
+import { Grid } from 'react-loading-icons';
 import Preview from "./Preview";
 import Header from "./Header";
 
@@ -157,6 +158,10 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap }:
             </div>
             <div className='bottom-6 fixed lg-button-center'>
                 <Button onClick={() => savePlayList()} size="lg" tooltip="Create a new playlist with all shown collabs.">Create Playlist</Button>
+            </div>
+            <div className='bottom-4 right-4 w-18 fixed text-center'>
+                <Grid fill="#1DB954" height={"2.5em"}/>
+                <p className='text-white text-xs mt-2'>Loading...</p>
             </div>
         </div>
         <div className='absolute z-10'>
