@@ -19,6 +19,7 @@ export default function Home() {
     const [collabsLoading, setCollabsLoading] = useState(true);
     const ws = useRef(null as WebSocket | null);
     const collabRef = useRef(null as any);
+    const selectedArtistsLength = useRef(0);
     
     const fetchArtists = () => {
         fetch(url, {
@@ -43,6 +44,7 @@ export default function Home() {
     const findCollabs = (ids: string[], mode: string) => {
         setLoadingMessage("Finding All Collabs...");
         setLoading(true);
+        selectedArtistsLength.current = ids.length;
 
         ws.current?.send(JSON.stringify(
             {
@@ -71,12 +73,12 @@ export default function Home() {
             }
             if (isLoading) 
                 setLoading(false);
+            if (collabRef && collabRef.current)
+                collabRef.current.addCollab(collab);
             if (track.id === "close") {
                 wsCurrent.close();
                 setCollabsLoading(false);
             } else {
-                if (collabRef && collabRef.current)
-                    collabRef.current.addCollab(collab);
                 setCollabTracks(current => [collab, ...current]);
             }            
         };
@@ -127,7 +129,7 @@ export default function Home() {
     if (isLoading || !artists) return <Loading>{loadingMessage}</Loading>;
 
     return <div>
-        {finalCollabs.length > 0 ? <Collabs artistIdSet={artistIdSet} artistIdMap={artistIdMap} 
+        {finalCollabs.length > 0 ? <Collabs artistIdSet={artistIdSet} artistIdMap={artistIdMap} selectedArtistsLength={selectedArtistsLength.current}
         loading={collabsLoading} nodes={nodes} ref={collabRef} artistPicMap={artistPicMap}/>
          : <Following following={artists} findCollabs={findCollabs}/> }
     </div>;

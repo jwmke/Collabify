@@ -15,13 +15,14 @@ interface Link {
     collabs: Collab[] | undefined;
 }
 
-const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loading }:
-    { artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, nodes: ArtistNode[], artistPicMap: { [artist: number]: string }, loading:boolean }, ref) => {
+const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loading, selectedArtistsLength }:
+    { artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, nodes: ArtistNode[], artistPicMap: { [artist: number]: string }, loading:boolean, selectedArtistsLength:number }, ref) => {
     
     const [playlistMade, setPlaylistMade] = useState(false);
     const [highlightLink, setHighlightLink] = useState([] as number[]);
     const [previewCollabs, setPreviewCollabs] = useState([] as Collab[]);
     const [artistPics, setArtistPics] = useState([] as string[]);
+    const processedArtists = useRef(new Set() as Set<string>);
     const linkRef = useRef({
         linkCollabs: new Map<string, Collab[]>(),
         maxSize: -1 as number
@@ -89,33 +90,39 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
     }
 
     const addCollab = (track:Collab) => {
-        const srcArtistId = track.artists[0].id;
-        track.artists.slice(1).forEach((artist:SpotifyApi.ArtistObjectSimplified) => {
-            const tarArtistId = artist.id;
-            if (artistIdSet.has(tarArtistId) && artistIdSet.has(srcArtistId)) {
-                const connection = JSON.stringify([srcArtistId, tarArtistId].sort());
-                let collabs = linkRef.current.linkCollabs.get(connection);
-                const maxSize = linkRef.current.maxSize;
-                if (collabs === undefined) {
-                    linkRef.current.maxSize = 1 > maxSize ? 1 : maxSize;
-                    linkRef.current.linkCollabs.set(connection, [track]);
-                } else {
-                    let trackNotInCollabs = true;
-                    collabs.every((collab) => {
-                        if (collab.id === track.id) {
-                            trackNotInCollabs = false;
-                            return false;
+        if (track.id === "close") {
+            processedArtists.current = artistIdSet;
+        } else {
+            const srcArtistId = track.artists[0].id;
+            track.artists.slice(1).forEach((artist:SpotifyApi.ArtistObjectSimplified) => {
+                const tarArtistId = artist.id;
+                if (artistIdSet.has(tarArtistId) && artistIdSet.has(srcArtistId)) {
+                    processedArtists.current.add(tarArtistId);
+                    processedArtists.current.add(srcArtistId);
+                    const connection = JSON.stringify([srcArtistId, tarArtistId].sort());
+                    let collabs = linkRef.current.linkCollabs.get(connection);
+                    const maxSize = linkRef.current.maxSize;
+                    if (collabs === undefined) {
+                        linkRef.current.maxSize = 1 > maxSize ? 1 : maxSize;
+                        linkRef.current.linkCollabs.set(connection, [track]);
+                    } else {
+                        let trackNotInCollabs = true;
+                        collabs.every((collab) => {
+                            if (collab.id === track.id) {
+                                trackNotInCollabs = false;
+                                return false;
+                            }
+                            return true;
+                        });
+                        if (trackNotInCollabs) {
+                            collabs.push(track);
+                            linkRef.current.maxSize = collabs.length > maxSize ? collabs.length : maxSize;
+                            linkRef.current.linkCollabs.set(connection, collabs);
                         }
-                        return true;
-                    });
-                    if (trackNotInCollabs) {
-                        collabs.push(track);
-                        linkRef.current.maxSize = collabs.length > maxSize ? collabs.length : maxSize;
-                        linkRef.current.linkCollabs.set(connection, collabs);
                     }
                 }
-            }
-        });
+            });
+        }
     };
 
     let links = [] as Link[];
@@ -157,7 +164,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                 {previewCollabs.length > 0 ? <Preview tracks={previewCollabs} artistPics={artistPics} closeModal={closeLinkModal}/> : null}
             </div>
             <div className='bottom-6 fixed lg-button-center'>
-                <Button onClick={() => savePlayList()} size="lg" tooltip="Create a new playlist with all shown collabs.">Create Playlist</Button>
+                <Button onClick={() => savePlayList()} size="lg" loading={processedArtists.current.size/(selectedArtistsLength * 1.0)} tooltip="Create a new playlist with all shown collabs.">Create Playlist</Button>
             </div>
             {loading && <div className='bottom-6 -right-2 w-18 fixed text-center'>
                 <Grid fill="#1DB954" height={"2.5em"}/>
