@@ -126,7 +126,6 @@ func getAlbums(client *http.Client, artistId ID, token string, mode string) []Al
 				return nil
 			}
 			res.Body.Close()
-			// fmt.Println(retry) // For debugging
 			time.Sleep(time.Duration(retry+2) * time.Second)
 		} else if res.StatusCode == 200 {
 			albumsReq := new(AlbumsReq)

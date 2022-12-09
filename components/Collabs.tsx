@@ -7,6 +7,7 @@ import React, { forwardRef, useImperativeHandle } from "react";
 import { Grid } from 'react-loading-icons';
 import Preview from "./Preview";
 import Header from "./Header";
+import { forceLink } from 'd3-force';
 
 interface Link {
     source: number;
@@ -125,6 +126,16 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
         }
     };
 
+    const normalize = (enteredValue:number, normalizedMin=2, normalizedMax=15) => {
+        if (enteredValue === 1)
+            return 2;
+        var mx = (Math.log((enteredValue-1))/(Math.log(linkRef.current.maxSize-1)));
+        var preshiftNormalized = mx*(normalizedMax-normalizedMin);
+        var shiftedNormalized = preshiftNormalized + normalizedMin;
+        
+        return shiftedNormalized;
+    }
+
     let links = [] as Link[];
     linkRef.current.linkCollabs.forEach((value, key)=> {
         const keyArray = JSON.parse(key);
@@ -151,6 +162,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
     useEffect(() => {
         if (forceRef && forceRef.current) {
             forceRef.current.d3Force("charge").strength(-10);
+            forceRef.current.d3Force("link", forceLink().distance((d:any) => (d.size * 5) + 50))
             setTimeout(()=> {
                 forceRef.current.d3Force("charge").strength(-1);
             }, 2000);
@@ -175,7 +187,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
             <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
                 linkWidth={(link:any) => {
                     const currentLink = [link.source, link.target].sort();
-                    return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? (link.size * 0.5) + 2 : (link.size * 0.5)}
+                    return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? (normalize(link.size)) + 2 : (normalize(link.size))}
                 }
                 linkColor={(link:any) => {
                         const currentLink = [link.source, link.target].sort();
@@ -192,6 +204,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                         }
                     }
                 }}
+                linkResolution={15}
                 linkHoverPrecision={6}
                 ref={forceRef}
                 linkOpacity={0.5}
@@ -199,7 +212,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                         const imgTexture = new THREE.TextureLoader().load(img);
                         const material = new THREE.SpriteMaterial({ map: imgTexture });
                         const sprite = new THREE.Sprite(material);
-                        sprite.scale.set(15, 15, 1);
+                        sprite.scale.set(20, 20, 1);
 
                         return sprite;
                     }
