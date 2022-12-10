@@ -24,6 +24,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
     const [previewCollabs, setPreviewCollabs] = useState([] as Collab[]);
     const [artistPics, setArtistPics] = useState([] as string[]);
     const processedArtists = useRef(new Set() as Set<string>);
+    const totalCollabs = useRef(0);
     const linkRef = useRef({
         linkCollabs: new Map<string, Collab[]>(),
         maxSize: -1 as number
@@ -49,7 +50,6 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
         }
 
         // TODO Ask let user know that app is still finding collabs and confirm that they want to make playlist with existing found collabs, or keep waiting
-        // Make finding timer that updates every 12 seconds
         fetch("https://api.spotify.com/v1/me", { headers: headers })
             .then((res) => res.json())
             .then((userData) => {
@@ -76,10 +76,16 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                                 .then((res) => {
                                     if (idx === reqBodies.length-1) {
                                         if (res.status === 201) {
-                                            setPlaylistMade(true); // TODO Make success notification
+                                            totalCollabs.current += reqList.length;
+                                            setPlaylistMade(true);
+                                            setTimeout(()=> {
+                                                setPlaylistMade(false);
+                                            }, 5000);
                                         } else {
                                             // TODO Error checking
                                         }
+                                    } else {
+                                        totalCollabs.current += 100;
                                     }
                                 }
                             );
@@ -182,6 +188,9 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                 <Grid fill="#1DB954" height={"2.5em"}/>
                 {/* <p className='text-white text-xs mt-2'>Loading...</p> */}
             </div>}
+            <div className='fixed w-1/3 h-12 text-center bg-green rounded-3xl alert-center top-7 pt-2 transition-opacity ease-in-out duration-300'>
+                <p className='text-black font-bold text-lg'>{`Playlist with ${totalCollabs} collabs succesfully created.`}</p>
+            </div>
         </div>
         <div className='absolute z-10'>
             <ForceGraph3D graphData={gData} backgroundColor={"#212121"}

@@ -64,3 +64,7 @@ a {
 .lg-button-center {
   left: calc(50% - 20rem/2);
 }
+
+.alert-center {
+  left: calc(50% - (33.33333%/2));
+}
