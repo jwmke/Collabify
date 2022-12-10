@@ -80,6 +80,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                                             setPlaylistMade(true);
                                             setTimeout(()=> {
                                                 setPlaylistMade(false);
+                                                totalCollabs.current = 0;
                                             }, 5000);
                                         } else {
                                             // TODO Error checking
@@ -168,7 +169,6 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
     useEffect(() => {
         if (forceRef && forceRef.current) {
             forceRef.current.d3Force("charge").strength(-10);
-            forceRef.current.d3Force("link", forceLink().distance((d:any) => (d.size * 5) + 50))
             setTimeout(()=> {
                 forceRef.current.d3Force("charge").strength(-1);
             }, 2000);
@@ -188,9 +188,9 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                 <Grid fill="#1DB954" height={"2.5em"}/>
                 {/* <p className='text-white text-xs mt-2'>Loading...</p> */}
             </div>}
-            <div className='fixed w-1/3 h-12 text-center bg-green rounded-3xl alert-center top-7 pt-2 transition-opacity ease-in-out duration-300'>
-                <p className='text-black font-bold text-lg'>{`Playlist with ${totalCollabs} collabs succesfully created.`}</p>
-            </div>
+            {playlistMade ?<div className='fixed w-1/3 h-12 text-center bg-green rounded-3xl alert-center top-7 pt-2 transition-opacity ease-in-out duration-300'>
+                <p className='text-black font-bold text-lg'>{`Playlist with ${totalCollabs.current} collabs succesfully created.`}</p>
+            </div> : null}
         </div>
         <div className='absolute z-10'>
             <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
