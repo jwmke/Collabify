@@ -1,10 +1,15 @@
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Collab } from "../custom-types";
 
 export default function Preview({ tracks, artistPics, closeModal }: { tracks:Collab[], artistPics:string[], closeModal:Function }) {
     const [selectedTrack, setSelectedTrack] = useState(tracks[0] as Collab);
-    return <div className="bg-med-grey bg-opacity-80 rounded-lg">
+
+    useEffect(() => {
+        setSelectedTrack(tracks[0]);
+    }, [tracks]);
+
+    return <div className="bg-med-grey bg-opacity-80 rounded-lg backdrop-blur-sm">
         <div className="w-full">
             <p className="text-light-gray hover:cursor-pointer text-lg float-right text-md mr-3 hover:text-green" onClick={() => closeModal()}>x</p>
         </div>
