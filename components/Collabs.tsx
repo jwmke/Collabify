@@ -1,4 +1,4 @@
-import { ArtistNode, Collab } from '../custom-types';
+import { ArtistNode, Collab, TopCollab } from '../custom-types';
 import Button from "./Button";
 import { ForceGraph3D } from 'react-force-graph';
 import * as THREE from 'three';
@@ -7,7 +7,7 @@ import React, { forwardRef, useImperativeHandle } from "react";
 import { Grid } from 'react-loading-icons';
 import Preview from "./Preview";
 import Header from "./Header";
-import { forceLink } from 'd3-force';
+import Summary from './Summary';
 
 interface Link {
     source: number;
@@ -184,6 +184,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
             <div className='bottom-6 fixed lg-button-center'>
                 <Button onClick={() => savePlayList()} size="lg" loading={processedArtists.current.size/(selectedArtistsLength * 1.0)} tooltip="Create a new playlist with all shown collabs.">Create Playlist</Button>
             </div>
+            {/* {processedArtists.current.size === selectedArtistsLength ? <Summary collabStats={} closeModal={} topCollabArtists={} /> : null} */}
             {loading && <div className='bottom-6 -right-2 w-18 fixed text-center'>
                 <Grid fill="#1DB954" height={"2.5em"}/>
                 {/* <p className='text-white text-xs mt-2'>Loading...</p> */}
