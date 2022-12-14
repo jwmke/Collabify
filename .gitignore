@@ -40,3 +40,4 @@ next-env.d.ts
 
 # go
 /api/*.exe
+/api/*.zip
