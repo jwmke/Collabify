@@ -90,9 +90,11 @@ export default function Home() {
 
     const artistIdMap: { [artist: string]: number } = {};
     const artistPicMap: { [artist: number]: string } = {};
+    const artistIdPicMap: { [artist: string]: string } = {};
     artists.forEach((artist:SpotifyApi.ArtistObjectFull, idx: number) => {
         artistIdMap[artist.id] = idx;
         artistPicMap[idx] = artist.images[2].url;
+        artistIdPicMap[artist.id] = artist.images[2].url;
     });
 
     const artistIdSet = new Set(artists.map((artist:SpotifyApi.ArtistObjectFull) => (artist.id)));
@@ -130,7 +132,7 @@ export default function Home() {
 
     return <div>
         {finalCollabs.length > 0 ? <Collabs artistIdSet={artistIdSet} artistIdMap={artistIdMap} selectedArtistsLength={selectedArtistsLength.current}
-        loading={collabsLoading} nodes={nodes} ref={collabRef} artistPicMap={artistPicMap}/>
+        loading={collabsLoading} nodes={nodes} ref={collabRef} artistPicMap={artistPicMap} artistIdPicMap={artistIdPicMap}/>
          : <Following following={artists} findCollabs={findCollabs}/> }
     </div>;
 }
