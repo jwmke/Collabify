@@ -1,4 +1,4 @@
-import { ArtistNode, Collab, TopCollab } from '../custom-types';
+import { ArtistNode, Collab } from '../custom-types';
 import Button from "./Button";
 import { ForceGraph3D } from 'react-force-graph';
 import * as THREE from 'three';
@@ -16,12 +16,13 @@ interface Link {
     collabs: Collab[] | undefined;
 }
 
-const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loading, selectedArtistsLength }:
-    { artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, nodes: ArtistNode[], artistPicMap: { [artist: number]: string }, loading:boolean, selectedArtistsLength:number }, ref) => {
+const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loading, selectedArtistsLength, artistIdPicMap }:
+    { artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, nodes: ArtistNode[], artistPicMap: { [artist: number]: string }, loading:boolean, selectedArtistsLength:number, artistIdPicMap: { [artist: string]: string } }, ref) => {
     
     const [playlistMade, setPlaylistMade] = useState(false);
     const [highlightLink, setHighlightLink] = useState([] as number[]);
     const [previewCollabs, setPreviewCollabs] = useState([] as Collab[]);
+    const [summaryOpen, setSummaryOpen] = useState(false);
     const [artistPics, setArtistPics] = useState([] as string[]);
     const processedArtists = useRef(new Set() as Set<string>);
     const totalCollabs = useRef(0);
@@ -29,6 +30,11 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
         linkCollabs: new Map<string, Collab[]>(),
         maxSize: -1 as number
     });
+    const summaryStatRef = useRef({
+        artistsFound: new Set() as Set<string>,
+        totalTracks: 0,
+        topArtists: {} as { [artists: string]: number }
+    })
 
     const closeLinkModal = () => {
         setHighlightLink([]);
@@ -100,6 +106,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
     const addCollab = (track:Collab) => {
         if (track.id === "close") {
             processedArtists.current = artistIdSet;
+            setSummaryOpen(true);
         } else {
             const srcArtistId = track.artists[0].id;
             track.artists.slice(1).forEach((artist:SpotifyApi.ArtistObjectSimplified) => {
@@ -124,6 +131,19 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                         });
                         if (trackNotInCollabs) {
                             collabs.push(track);
+                            summaryStatRef.current.totalTracks += 1;
+                            const collabKey = JSON.stringify([{img: artistIdPicMap[track.artists[0].id], name: track.artists[0].name}, {img: artistIdPicMap[artist.id], name: artist.name}].sort());
+                            if (collabKey in summaryStatRef.current.topArtists) {
+                                summaryStatRef.current.topArtists[collabKey] += 1;
+                            } else {
+                                summaryStatRef.current.topArtists[collabKey] = 1;
+                            }
+                            if (!summaryStatRef.current.artistsFound.has(srcArtistId)) {
+                                summaryStatRef.current.artistsFound.add(srcArtistId);
+                            }
+                            if (!summaryStatRef.current.artistsFound.has(tarArtistId)) {
+                                summaryStatRef.current.artistsFound.add(tarArtistId);
+                            }
                             linkRef.current.maxSize = collabs.length > maxSize ? collabs.length : maxSize;
                             linkRef.current.linkCollabs.set(connection, collabs);
                         }
@@ -184,7 +204,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
             <div className='bottom-6 fixed lg-button-center'>
                 <Button onClick={() => savePlayList()} size="lg" loading={processedArtists.current.size/(selectedArtistsLength * 1.0)} tooltip="Create a new playlist with all shown collabs.">Create Playlist</Button>
             </div>
-            {/* {processedArtists.current.size === selectedArtistsLength ? <Summary collabStats={} closeModal={} topCollabArtists={} /> : null} */}
+            {summaryOpen ? <Summary collabStats={[summaryStatRef.current.totalTracks, summaryStatRef.current.artistsFound.size]} closeModal={()=>setSummaryOpen(false)} topCollabArtists={summaryStatRef.current.topArtists} /> : null}
             {loading && <div className='bottom-6 -right-2 w-18 fixed text-center'>
                 <Grid fill="#1DB954" height={"2.5em"}/>
                 {/* <p className='text-white text-xs mt-2'>Loading...</p> */}

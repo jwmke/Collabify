@@ -9,8 +9,3 @@ export interface ArtistNode {
     id: number,
     img: string
 }
-
-export interface TopCollab {
-    artists: { name: string, img: string }[];
-    collabs: number;
-}
