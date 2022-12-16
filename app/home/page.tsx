@@ -58,7 +58,7 @@ export default function Home() {
 
     useEffect(()=> {
         fetchArtists();
-        ws.current = new WebSocket("ws://collabify-env.eba-wg2nthpm.us-east-2.elasticbeanstalk.com:8080/socket");
+        ws.current = new WebSocket("ws://localhost:8080/socket"); //collabify-env.eba-wg2nthpm.us-east-2.elasticbeanstalk.com
         ws.current.onopen = () => console.log("ws opened");
         ws.current.onclose = () => console.log("ws closed");
         const wsCurrent = ws.current;

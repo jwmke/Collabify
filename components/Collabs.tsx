@@ -103,6 +103,18 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
         );
     }
 
+    const hash = (str:string) => {
+        var hash = 0,
+            i, chr;
+        if (str.length === 0) return hash;
+        for (i = 0; i < str.length; i++) {
+            chr = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + chr;
+            hash |= 0; // Convert to 32bit integer
+        }
+        return hash;
+    }
+
     const addCollab = (track:Collab) => {
         if (track.id === "close") {
             processedArtists.current = artistIdSet;
@@ -114,10 +126,11 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                 if (artistIdSet.has(tarArtistId) && artistIdSet.has(srcArtistId)) {
                     processedArtists.current.add(tarArtistId);
                     processedArtists.current.add(srcArtistId);
-                    const connection = JSON.stringify([srcArtistId, tarArtistId].sort());
+                    const connection = JSON.stringify([srcArtistId, tarArtistId].slice().sort((a, b) => (hash(a) - hash(b))));
                     let collabs = linkRef.current.linkCollabs.get(connection);
                     const maxSize = linkRef.current.maxSize;
                     if (collabs === undefined) {
+                        updateCollabStats(track, artist, srcArtistId, tarArtistId);
                         linkRef.current.maxSize = 1 > maxSize ? 1 : maxSize;
                         linkRef.current.linkCollabs.set(connection, [track]);
                     } else {
@@ -131,25 +144,29 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                         });
                         if (trackNotInCollabs) {
                             collabs.push(track);
-                            summaryStatRef.current.totalTracks += 1;
-                            const collabKey = JSON.stringify([{img: artistIdPicMap[track.artists[0].id], name: track.artists[0].name}, {img: artistIdPicMap[artist.id], name: artist.name}].sort());
-                            if (collabKey in summaryStatRef.current.topArtists) {
-                                summaryStatRef.current.topArtists[collabKey] += 1;
-                            } else {
-                                summaryStatRef.current.topArtists[collabKey] = 1;
-                            }
-                            if (!summaryStatRef.current.artistsFound.has(srcArtistId)) {
-                                summaryStatRef.current.artistsFound.add(srcArtistId);
-                            }
-                            if (!summaryStatRef.current.artistsFound.has(tarArtistId)) {
-                                summaryStatRef.current.artistsFound.add(tarArtistId);
-                            }
+                            updateCollabStats(track, artist, srcArtistId, tarArtistId);
                             linkRef.current.maxSize = collabs.length > maxSize ? collabs.length : maxSize;
                             linkRef.current.linkCollabs.set(connection, collabs);
                         }
                     }
                 }
             });
+        }
+    };
+
+    const updateCollabStats = (track:Collab, artist:SpotifyApi.ArtistObjectSimplified, srcArtistId:string, tarArtistId:string) => {
+        summaryStatRef.current.totalTracks += 1;
+        const collabKey = JSON.stringify([{img: artistIdPicMap[track.artists[0].id], name: track.artists[0].name}, {img: artistIdPicMap[artist.id], name: artist.name}].slice().sort((a, b) => (hash(a.name) - hash(b.name))));
+        if (collabKey in summaryStatRef.current.topArtists) {
+            summaryStatRef.current.topArtists[collabKey] += 1;
+        } else {
+            summaryStatRef.current.topArtists[collabKey] = 1;
+        }
+        if (!summaryStatRef.current.artistsFound.has(srcArtistId)) {
+            summaryStatRef.current.artistsFound.add(srcArtistId);
+        }
+        if (!summaryStatRef.current.artistsFound.has(tarArtistId)) {
+            summaryStatRef.current.artistsFound.add(tarArtistId);
         }
     };
 
@@ -216,17 +233,17 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
         <div className='absolute z-10'>
             <ForceGraph3D graphData={gData} backgroundColor={"#212121"}
                 linkWidth={(link:any) => {
-                    const currentLink = [link.source, link.target].sort();
+                    const currentLink = [link.source, link.target].slice().sort((a, b) => (hash(a) - hash(b)));
                     return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? (normalize(link.size)) + 2 : (normalize(link.size))}
                 }
                 linkColor={(link:any) => {
-                        const currentLink = [link.source, link.target].sort();
+                        const currentLink = [link.source, link.target].slice().sort((a, b) => (hash(a) - hash(b)));
                         return JSON.stringify(highlightLink) === JSON.stringify(currentLink) ? "#1db954" : "#b3b3b3"
                     }
                 }
                 onLinkHover={(link:any) => {
                     if (link) {
-                        const newLink = [link.source.id, link.target.id].sort();
+                        const newLink = [link.source.id, link.target.id].slice().sort((a, b) => (hash(a) - hash(b)));
                         if (JSON.stringify(newLink) !== JSON.stringify(highlightLink)) {
                             setHighlightLink(newLink);
                             setArtistPics([artistPicMap[link.source.id], artistPicMap[link.target.id]]);
