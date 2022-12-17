@@ -26,7 +26,12 @@ export default function Button({ onClick, size, children, tooltip, loading }: Pr
         <div className="text-white font-bold text-md text-center h-12 top-1 relative group-hover:text-black">{children}</div>
     </div>;
 
-    const button = size === "lg" ? lgBtn : smBtn;
+    const mdBtn = <div className="h-10 w-60 mx-auto border-green border-solid border-2 bg-dark-gray bg-opacity-80  hover:bg-opacity-100 rounded-3xl align-middle hover:bg-green hover:cursor-pointer group" onClick={e => onClick()}>
+    <div className="text-white font-bold text-md text-center h-12 top-1 relative group-hover:text-black">{children}</div>
+    </div>;
+
+
+    const button = size === "lg" ? lgBtn : size === "md" ? mdBtn : smBtn;
     return tooltip ? <Tooltip text={tooltip}>
         {button}
     </Tooltip> : 
