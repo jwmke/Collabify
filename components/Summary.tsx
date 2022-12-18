@@ -2,9 +2,9 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import Button from "./Button";
 
-export default function Summary({ collabStats, topCollabArtists, closeModal }: { collabStats: number[], topCollabArtists: { [artists: string]: number }, closeModal:Function }) {
+export default function Summary({ collabStats, topCollabArtists, closeModal, highlightLink } : 
+    { collabStats: number[], topCollabArtists: { [artists: string]: number }, closeModal:Function, highlightLink:Function }) {
     const [top5, setTop5] = useState([] as [string, number][]);
-    const [imageUrl, setImageUrl] = useState(null as any);
 
     useEffect(() => {
         // TODO: Work around Image URL size limitations for chrome/safari https://stackoverflow.com/questions/695151/data-protocol-url-size-limitations
@@ -30,8 +30,8 @@ export default function Summary({ collabStats, topCollabArtists, closeModal }: {
         </div>
         {top5.map((artistCollabs, idx) => {
             const artists = JSON.parse(artistCollabs[0]);
-            return <div className="flex items-start" key={idx}>
-                <span className="mt-7 mr-3 ml-16">
+            return <div className="flex items-start hover:text-green hover:cursor-default" key={idx} onMouseEnter={e => highlightLink(artists[0].id, artists[1].id)}>
+                <span className="mt-8 mr-3 ml-16">
                     <p className="font-bold text-xl">{`${idx + 1}.`}</p>
                 </span>
                 <span>

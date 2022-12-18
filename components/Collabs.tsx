@@ -110,7 +110,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
         for (i = 0; i < str.length; i++) {
             chr = str.charCodeAt(i);
             hash = ((hash << 5) - hash) + chr;
-            hash |= 0; // Convert to 32bit integer
+            hash |= 0;
         }
         return hash;
     }
@@ -156,7 +156,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
 
     const updateCollabStats = (track:Collab, artist:SpotifyApi.ArtistObjectSimplified, srcArtistId:string, tarArtistId:string) => {
         summaryStatRef.current.totalTracks += 1;
-        const collabKey = JSON.stringify([{img: artistIdPicMap[track.artists[0].id], name: track.artists[0].name}, {img: artistIdPicMap[artist.id], name: artist.name}].slice().sort((a, b) => (hash(a.name) - hash(b.name))));
+        const collabKey = JSON.stringify([{img: artistIdPicMap[track.artists[0].id], name: track.artists[0].name, id: track.artists[0].id}, {img: artistIdPicMap[artist.id], name: artist.name, id: artist.id}].slice().sort((a, b) => (hash(a.name) - hash(b.name))));
         if (collabKey in summaryStatRef.current.topArtists) {
             summaryStatRef.current.topArtists[collabKey] += 1;
         } else {
@@ -169,6 +169,15 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
             summaryStatRef.current.artistsFound.add(tarArtistId);
         }
     };
+
+    const highlightLinkFromChild = (id1:string, id2:string) => {
+        const newLink = [id1, id2].slice().sort((a, b) => (hash(a) - hash(b)));
+        if (JSON.stringify(newLink) !== JSON.stringify(highlightLink)) {
+            setHighlightLink([artistIdMap[newLink[0]], artistIdMap[newLink[1]]]);
+            setArtistPics([artistIdPicMap[id1], artistIdPicMap[id2]]);
+            setPreviewCollabs(linkRef.current.linkCollabs.get(JSON.stringify([id1, id2].slice().sort((a, b) => (hash(a) - hash(b))))) || []);
+        }
+    }
 
     const normalize = (enteredValue:number, normalizedMin=2, normalizedMax=15) => {
         if (enteredValue === 1)
@@ -221,7 +230,11 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
             <div className='bottom-6 fixed lg-button-center'>
                 <Button onClick={() => savePlayList()} size="lg" loading={processedArtists.current.size/(selectedArtistsLength * 1.0)} tooltip="Create a new playlist with all shown collabs.">Create Playlist</Button>
             </div>
-            {summaryOpen ? <Summary collabStats={[summaryStatRef.current.totalTracks, summaryStatRef.current.artistsFound.size]} closeModal={()=>setSummaryOpen(false)} topCollabArtists={summaryStatRef.current.topArtists} /> : null}
+            {summaryOpen ? <Summary 
+                collabStats={[summaryStatRef.current.totalTracks, summaryStatRef.current.artistsFound.size]} 
+                closeModal={()=>setSummaryOpen(false)} 
+                topCollabArtists={summaryStatRef.current.topArtists}
+                highlightLink={highlightLinkFromChild} /> : null}
             {loading && <div className='bottom-6 -right-2 w-18 fixed text-center'>
                 <Grid fill="#1DB954" height={"2.5em"}/>
                 {/* <p className='text-white text-xs mt-2'>Loading...</p> */}
