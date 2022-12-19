@@ -2,7 +2,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Collab } from "../custom-types";
 
-export default function Preview({ tracks, artistPics, closeModal }: { tracks:Collab[], artistPics:string[], closeModal:Function }) {
+export default function Preview({ tracks, artistPics, closeModal, artistNames }: { tracks:Collab[], artistPics:string[], artistNames:string[], closeModal:Function }) {
     const [selectedTrack, setSelectedTrack] = useState(tracks[0] as Collab);
 
     useEffect(() => {
@@ -13,10 +13,20 @@ export default function Preview({ tracks, artistPics, closeModal }: { tracks:Col
         <div className="w-full">
             <p className="text-light-gray hover:cursor-pointer text-lg float-right text-md mr-3 hover:text-green" onClick={() => closeModal()}>x</p>
         </div>
-        <div className="w-72 h-28 flex justify-center items-center">
-            <Image className="inline-block align-middle hw100 rounded-md" src={artistPics[0]} alt={"Artist 1"} width={100} height={100} />
-            <p className="inline-block align-middle text-white font-bold text-xl mx-3 hover:cursor-default">+</p>
-            <Image className="inline-block align-middle hw100 rounded-md" src={artistPics[1]} alt={"Artist 2"} width={100} height={100} />
+        <div className="w-72 h-32 flex justify-center items-center">
+            <div className="text-center">
+                <Image className="inline-block hw100 rounded-md" src={artistPics[0]} alt={"Artist 1"} width={100} height={100} />
+                <div className="w-24 mt-1 -mb-1">
+                    <p className="text-white text-sm truncate">{artistNames[0]}</p>
+                </div>
+            </div>
+            <p className="inline-block -mt-5 text-white font-bold text-xl mx-3 hover:cursor-default">+</p>
+            <div className="text-center">
+                <Image className="inline-block align-middle hw100 rounded-md" src={artistPics[1]} alt={"Artist 2"} width={100} height={100} />
+                <div className="w-24 mt-1 -mb-1">
+                    <p className="text-white text-sm truncate">{artistNames[1]}</p>
+                </div>
+            </div>
         </div>
         <div className="h-3 flex justify-center items-center mb-2">
             <div className="w-64 h-0.5 bg-light-gray rounded-2xl"/>

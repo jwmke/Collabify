@@ -16,14 +16,15 @@ interface Link {
     collabs: Collab[] | undefined;
 }
 
-const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loading, selectedArtistsLength, artistIdPicMap }:
-    { artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, nodes: ArtistNode[], artistPicMap: { [artist: number]: string }, loading:boolean, selectedArtistsLength:number, artistIdPicMap: { [artist: string]: string } }, ref) => {
+const Collabs = forwardRef(({ artistIdSet, artistIdMap, idArtistMap, artistNameMap, nodes, artistPicMap, loading, selectedArtistsLength, artistIdPicMap }:
+    { artistIdSet:Set<string>, artistIdMap: { [artist: string]: number }, idArtistMap: { [artist: number]: string }, artistNameMap: { [artist: string]: string }, nodes: ArtistNode[], artistPicMap: { [artist: number]: string }, loading:boolean, selectedArtistsLength:number, artistIdPicMap: { [artist: string]: string } }, ref) => {
     
     const [playlistMade, setPlaylistMade] = useState(false);
     const [highlightLink, setHighlightLink] = useState([] as number[]);
     const [previewCollabs, setPreviewCollabs] = useState([] as Collab[]);
     const [summaryOpen, setSummaryOpen] = useState(false);
     const [artistPics, setArtistPics] = useState([] as string[]);
+    const [artistNames, setArtistNames] = useState([] as string[]);
     const processedArtists = useRef(new Set() as Set<string>);
     const totalCollabs = useRef(0);
     const linkRef = useRef({
@@ -40,6 +41,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
         setHighlightLink([]);
         setPreviewCollabs([]);
         setArtistPics([]);
+        setArtistNames([]);
     }
     
     const savePlayList = () => {
@@ -175,6 +177,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
         if (JSON.stringify(newLink) !== JSON.stringify(highlightLink)) {
             setHighlightLink([artistIdMap[newLink[0]], artistIdMap[newLink[1]]]);
             setArtistPics([artistIdPicMap[id1], artistIdPicMap[id2]]);
+            setArtistNames([artistNameMap[id1], artistNameMap[id2]]);
             setPreviewCollabs(linkRef.current.linkCollabs.get(JSON.stringify([id1, id2].slice().sort((a, b) => (hash(a) - hash(b))))) || []);
         }
     }
@@ -225,7 +228,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
         <div className='absolute h-full w-full z-20'>
             <Header headerType="Collab"/>
             <div className='float-right relative -top-20 mr-5'>
-                {previewCollabs.length > 0 ? <Preview tracks={previewCollabs} artistPics={artistPics} closeModal={closeLinkModal}/> : null}
+                {previewCollabs.length > 0 ? <Preview tracks={previewCollabs} artistPics={artistPics} artistNames={artistNames} closeModal={closeLinkModal}/> : null}
             </div>
             <div className='bottom-6 fixed lg-button-center'>
                 <Button onClick={() => savePlayList()} size="lg" loading={processedArtists.current.size/(selectedArtistsLength * 1.0)} tooltip="Create a new playlist with all shown collabs.">Create Playlist</Button>
@@ -260,6 +263,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, nodes, artistPicMap, loa
                         if (JSON.stringify(newLink) !== JSON.stringify(highlightLink)) {
                             setHighlightLink(newLink);
                             setArtistPics([artistPicMap[link.source.id], artistPicMap[link.target.id]]);
+                            setArtistNames([artistNameMap[idArtistMap[link.source.id]], artistNameMap[idArtistMap[link.target.id]]]);
                             setPreviewCollabs(link.collabs);
                         }
                     }

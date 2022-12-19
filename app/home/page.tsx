@@ -89,12 +89,16 @@ export default function Home() {
     }, []);
 
     const artistIdMap: { [artist: string]: number } = {};
+    const idArtistMap: { [artist: number]: string } = {};
     const artistPicMap: { [artist: number]: string } = {};
     const artistIdPicMap: { [artist: string]: string } = {};
+    const artistNameMap: { [artist: string]: string } = {};
     artists.forEach((artist:SpotifyApi.ArtistObjectFull, idx: number) => {
         artistIdMap[artist.id] = idx;
+        idArtistMap[idx] = artist.id;
         artistPicMap[idx] = artist.images[2].url;
         artistIdPicMap[artist.id] = artist.images[2].url;
+        artistNameMap[artist.id] = artist.name;
     });
 
     const artistIdSet = new Set(artists.map((artist:SpotifyApi.ArtistObjectFull) => (artist.id)));
@@ -131,8 +135,8 @@ export default function Home() {
     if (isLoading || !artists) return <Loading>{loadingMessage}</Loading>;
 
     return <div>
-        {finalCollabs.length > 0 ? <Collabs artistIdSet={artistIdSet} artistIdMap={artistIdMap} selectedArtistsLength={selectedArtistsLength.current}
-        loading={collabsLoading} nodes={nodes} ref={collabRef} artistPicMap={artistPicMap} artistIdPicMap={artistIdPicMap}/>
+        {finalCollabs.length > 0 ? <Collabs artistIdSet={artistIdSet} artistIdMap={artistIdMap} artistNameMap={artistNameMap} selectedArtistsLength={selectedArtistsLength.current}
+        loading={collabsLoading} nodes={nodes} ref={collabRef} artistPicMap={artistPicMap} artistIdPicMap={artistIdPicMap} idArtistMap={idArtistMap}/>
          : <Following following={artists} findCollabs={findCollabs}/> }
     </div>;
 }
