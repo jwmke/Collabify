@@ -73,3 +73,7 @@ a {
 .alert-center {
   left: calc(50% - (33.33333%/2));
 }
+
+.mobile-preview-center {
+  left: calc(50% - 18rem/2);;
+}

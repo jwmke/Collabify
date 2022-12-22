@@ -9,7 +9,7 @@ export default function Preview({ tracks, artistPics, closeModal, artistNames }:
         setSelectedTrack(tracks[0]);
     }, [tracks]);
 
-    return <div className="bg-med-grey bg-opacity-90 rounded-lg backdrop-blur-sm">
+    return <div className="bg-med-grey bg-opacity-90 rounded-lg backdrop-blur-sm w-72">
         <div className="w-full">
             <p className="text-light-gray hover:cursor-pointer text-lg float-right text-md mr-3 hover:text-green" onClick={() => closeModal()}>x</p>
         </div>

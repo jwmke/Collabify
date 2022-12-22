@@ -8,6 +8,7 @@ import { Grid } from 'react-loading-icons';
 import Preview from "./Preview";
 import Header from "./Header";
 import Summary from './Summary';
+import useWindowDimensions from './hooks/useWindowDimensions';
 
 interface Link {
     source: number;
@@ -27,6 +28,8 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, idArtistMap, artistNameM
     const [artistNames, setArtistNames] = useState([] as string[]);
     const processedArtists = useRef(new Set() as Set<string>);
     const totalCollabs = useRef(0);
+    const { width } = useWindowDimensions();
+    const mobile = width <= 480; 
     const linkRef = useRef({
         linkCollabs: new Map<string, Collab[]>(),
         maxSize: -1 as number
@@ -220,14 +223,14 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, idArtistMap, artistNameM
             forceRef.current.d3Force("charge").strength(-10);
             setTimeout(()=> {
                 forceRef.current.d3Force("charge").strength(-1);
-            }, 2000);
+            }, mobile ? 1000 : 2000);
         }
     }, []);
 
     return <div className='h-full w-full relative'>
         <div className='absolute h-full w-full z-20'>
             <Header headerType="Collab"/>
-            <div className='float-right relative -top-20 mr-5'>
+            <div className={`md:float-right relative top-3 md:-top-20 md:mr-5 ${mobile ? "mobile-preview-center" : ""}`}>
                 {previewCollabs.length > 0 ? <Preview tracks={previewCollabs} artistPics={artistPics} artistNames={artistNames} closeModal={closeLinkModal}/> : null}
             </div>
             <div className='bottom-6 fixed lg-button-center'>
@@ -238,7 +241,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, idArtistMap, artistNameM
                 closeModal={()=>setSummaryOpen(false)} 
                 topCollabArtists={summaryStatRef.current.topArtists}
                 highlightLink={highlightLinkFromChild} /> : null}
-            {loading && <div className='bottom-6 -right-2 w-18 fixed text-center'>
+            {loading && <div className={`${mobile ? "top-6" : ""} md:bottom-6 -right-2 w-18 fixed text-center`}>
                 <Grid fill="#1DB954" height={"2.5em"}/>
                 {/* <p className='text-white text-xs mt-2'>Loading...</p> */}
             </div>}
