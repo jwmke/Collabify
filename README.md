@@ -1,6 +1,8 @@
 # Collabify
 
-![stats](https://user-images.githubusercontent.com/43486503/208259753-cb9306b5-b8b4-415c-90fb-bc329fbb8d85.png)
+![statsV2](https://user-images.githubusercontent.com/43486503/209449427-59a7c00f-9157-47cc-95f3-c03bcd8acede.png)
+
+![followingV2](https://user-images.githubusercontent.com/43486503/209449535-4c036309-be98-4949-b562-d9cd42598f7e.png)
 
 ## Local Setup
 Prerequisites: Node & Go
