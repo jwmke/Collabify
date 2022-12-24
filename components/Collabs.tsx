@@ -231,7 +231,7 @@ const Collabs = forwardRef(({ artistIdSet, artistIdMap, idArtistMap, artistNameM
         <div className='absolute h-full w-full z-20'>
             <Header headerType="Collab"/>
             <div className={`md:float-right relative top-3 md:-top-20 md:mr-5 ${mobile ? "mobile-preview-center" : ""}`}>
-                {!summaryOpen && previewCollabs.length > 0 ? <Preview tracks={previewCollabs} artistPics={artistPics} artistNames={artistNames} closeModal={closeLinkModal}/> : null}
+                {(!mobile || !summaryOpen) && previewCollabs.length > 0 ? <Preview tracks={previewCollabs} artistPics={artistPics} artistNames={artistNames} closeModal={closeLinkModal}/> : null}
             </div>
             <div className='bottom-6 fixed lg-button-center'>
                 <Button onClick={() => savePlayList()} size="lg" loading={processedArtists.current.size/(selectedArtistsLength * 1.0)} tooltip="Create a new playlist with all shown collabs.">Create Playlist</Button>

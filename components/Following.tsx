@@ -9,12 +9,14 @@ export default function Following({ following, findCollabs }: { following: Spoti
     const [selectedIds, setSelectedIds] = useState(artistIds as string[]);
     const { width } = useWindowDimensions();
     const mobile = width <= 480; 
+    const infoText = mobile ? <div>Select one or more artists to find their collabs.<br/>All artists are selected by default.</div> : 
+    <div>Select one or more artists to find their collabs. All artists are selected by default.</div>
 
     return <div className="h-screen bg-dark-gray font-lato">
         <Header headerType="Log Out"/>
         <h1 className="text-white font-bold text-4xl text-center mt-2 md:-mt-6">Followed Artists</h1>
         <p className="text-white text-center mt-2 md:text-sm" style={{"fontSize": ".7rem"}}>
-            Select one or more artists to find their collabs. All artists are selected by default.
+            {infoText}
         </p>
         <div className="w-3/4 lg:w-1/2 mx-auto grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-5 lg:gap-8 mt-4 lg:mt-3 h-1/2 md:h-2/3 overflow-auto">
             {following.map((artist: SpotifyApi.ArtistObjectFull) => {
